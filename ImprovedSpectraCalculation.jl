@@ -14,33 +14,22 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 1f7b369e-addf-11ed-3732-af564dbcb6f7
-begin 
-	using PlutoUI, Plots, DataFramesMeta, DataFrames, CSV, DelimitedFiles
+# ╔═╡ 57f1eb97-178c-4b74-94b7-cc22242082a4
+using PlutoUI, MPRebinSpectra
 
-	push!(LOAD_PATH, "/home/shoram/.julia/dev/MPRebinSpectra/") # add package to path so it can be used by using MPRebinSpectra
+# ╔═╡ 54629bfc-2090-43d7-8566-c88919d81e14
+using Plots
 
-	using MPRebinSpectra
-end
+# ╔═╡ c07a5083-f5f8-4711-91ea-e38598da82f9
+using DelimitedFiles, DataFramesMeta
 
-# ╔═╡ 621dfae8-fa26-4c81-9a18-0f707fa9ca28
-md"""
-#### This notebook is a script used for calculating (combining) the improved spectra for 2vbb. There are two publications relevant to this work: Fedor's paper (DOI: 10.1103/PhysRevC.97.034315) and Ovidiu's paper (DOI: 10.3390/universe7050147)
+# ╔═╡ 7e30bede-6ec7-4d31-bc28-65a7ed3bfa37
+using CSV
 
-There are two important points to cover. First, the single-electron energy spectra will be sampled using `MPGenbb.jl` module. The module will be augmented in order to accomodate the combination of obtained single electron spectra from Rasto Dvornicky - that is the spectra will be sampled according to eq. 35 from Fedor's publication:
+# ╔═╡ e4c48ebc-9f59-4244-9b51-ac7cd78276c2
 
-$\frac{d\Gamma}{dT_{ee}} \sim \frac{dG_0}{dT_{ee}} + \xi_{31}\frac{dG_2}{dT_{ee}} + \frac{1}{3}(\xi_{31})^2\frac{dG_{22}}{dT_{ee}} + (\frac{1}{3}(\xi_{31})^2 + \xi_{51})\frac{dG_4}{dT_{ee}}$. 
 
-Where the individual $\frac{dG_i}{dT_{ee}}$ are obtained from tables we received from Rasto. The parameter $\xi_{51}$ is take to equal 0.1397 (assuming SSD as calculated by FS). The second parameter $\xi_{31}$ is free to change (we will take the default value to be 0.3738 as calculated by FS). 
-
-The next thing which is requried is to sample the angular distributions. In order to properly sample angular distributions, the parameter $K^{2\nu}$ must be provided. This parameter is defined (in eq. 26 from Ovidiu's paper) as:
-
-$K^{2\nu} = - \frac{H_0 + \xi_{31}H_2 + \frac{5}{9}\xi_{31}^2H_{22}+ (\frac{2}{9}\xi_{31}^2 + \xi_{51})H_{4}}{G_0 + \xi_{31}G_2 + \frac{1}{3}\xi_{31}^2G_{22} + (\frac{1}{3}\xi_{31}^2 + \xi_{51})G_4}$
-
-Where $H_i$ and $G_i$ are the integrals provided in tables by RD. The $\xi_i$ parameters are same as in the case for energy spectra.
-"""
-
-# ╔═╡ 1fca8aca-b516-4525-a3bd-a462072ccc76
+# ╔═╡ f501d3cf-09bf-4506-befe-1eea362cd1dd
 begin 
 	gr() 
 	default(fmt = :jpg)
@@ -63,8 +52,22 @@ begin
 
 end
 
-# ╔═╡ 1eabe1b2-c5de-4a53-8552-44c9f0bf5363
-# Relevant constants from the two publications
+# ╔═╡ a1f0aeec-ad30-11ed-22a5-d5ac85a47f5f
+md"""
+This notebook is a test script for calculating the improved spectra for 2vbb. There are two important points to cover. First, the single-electron energy spectra will be sampled using `MPGenbb.jl` module. The module will be augmented in order to accomodate the combination of obtained single electron spectra from Rasto Dvornicky - that is the spectra will be sampled according to eq. 35 from Fedor's publication:
+
+$\frac{d\Gamma}{dT_{ee}} \sim \frac{dG_0}{dT_{ee}} + \xi_{31}\frac{dG_2}{dT_{ee}} + \frac{1}{3}(\xi_{31})^2\frac{dG_{22}}{dT_{ee}} + (\frac{1}{3}(\xi_{31})^2 + \xi_{51})\frac{dG_4}{dT_{ee}}$. 
+
+Where the individual $\frac{dG_i}{dT_{ee}}$ are obtained from tables we received from Rasto. The parameter $\xi_{51}$ is take to equal 0.1397 (assuming SSD as calculated by FS). The second parameter $\xi_{31}$ is free to change (we will take the default value to be 0.3738 as calculated by FS). 
+
+The next thing which is requried is to sample the angular distributions. In order to properly sample angular distributions, the parameter $K^{2\nu}$ must be provided. This parameter is defined (in eq. 26 from Ovidiu's paper) as:
+
+$K^{2\nu} = - \frac{H_0 + \xi_{31}H_2 + \frac{5}{9}\xi_{31}^2H_{22}+ (\frac{2}{9}\xi_{31}^2 + \xi_{51})H_{4}}{G_0 + \xi_{31}G_2 + \frac{1}{3}\xi_{31}^2G_{22} + (\frac{1}{3}\xi_{31}^2 + \xi_{51})G_4}$
+
+Where $H_i$ and $G_i$ are the integrals provided in tables by RD. The $\xi_i$ parameters are same as in the case for energy spectra.
+"""
+
+# ╔═╡ 2ae1ccb9-9047-43f6-add6-4adce49e28d1
 begin
 	const G0 = 0.334863e-46 # [MeV]
 	const G2 = 0.148350E-46 # [MeV]
@@ -80,44 +83,52 @@ begin
 end
 	
 
-# ╔═╡ 8b241d34-37c5-4f97-9575-fd225fd5b703
-# equation 26 in Ovidius paper
+# ╔═╡ f0f38ea7-337e-45d1-a34c-d0ad898516fc
 function get_kappa(ξ31, ξ51 = 0.1397, G0 = 0.334863e-46, G2 = 0.148350E-46, G22 = 0.188606E-47, G4 = 0.824467E-47, H0 = 0.226022E-46, H2 = 0.929409E-47, H22 = 0.108907E-47, H4 = 0.484671E-47)
 	numerator = H0 + ξ31*H2 + 5/9*ξ31^2*H22 + (2/9*ξ31^2 + ξ51)*H4
 	denumerator = G0 + ξ31*G2 + 1/3*ξ31^2*G22 + (1/3*ξ31^2 + ξ51)*G4
 
 	return -1* numerator / denumerator
 end
+	
 
-# ╔═╡ cddb1cb9-2d10-4950-8d15-9693a6ff28eb
-md"""
-ξ31 = $(@bind xi31 Slider(-1.0:0.0001:1.0))
-"""
+# ╔═╡ 079a63b1-6c98-412f-8ee5-02a478478b3d
+@bind xi31 Slider(-1.0:0.001:1.0)
 
-# ╔═╡ 7150b3a5-6b2e-47b8-8c1c-8ae539a658a9
+# ╔═╡ 7ffa46de-77f8-49ca-aa95-a80683db7052
 xi31
 
-# ╔═╡ 5c565bc0-323e-4a02-a73d-55d96d7fd1ad
-# associated kappa
+# ╔═╡ 6b6a5f2a-130d-490b-a801-4202088d6823
 K = get_kappa(xi31)
 
-# ╔═╡ 613726b7-bb1c-4890-a27b-b3211f4c249b
-plot( -1.:0.01:1., get_kappa.(-1.:0.01:1.), ylabel = "kappa", xlabel ="xi" )
+# ╔═╡ c522d4df-456b-416e-8c3d-6e59d14fcbf6
+plot( 
+	0:0.001:1.0, 
+	get_kappa.(0:0.001:1.0), 
+	xlabel = "ξ31", 
+	ylabel = "K^2ν", 
+	title = "fixed ξ51 = $ξ51", 
+	label = "" 
+)
 
-# ╔═╡ e6e39eba-5872-44e1-9075-5500eb43461b
+# ╔═╡ 28b2613c-ab28-42ea-bd5a-65ac9362fbc3
 md"""
-In order for the spectra to be sampled in `MPGenbb.jl` the individual tables of $dG_i$ need to be connected with the proper parameters.
+Now in order for the spectra to be sampled in `MPGenbb.jl` the individual tables of $dG_i$ need to be connected with the proper parameters.
 """
 
-# ╔═╡ 3969ee52-7f7f-49dd-93d9-2edb6796b253
-begin 
-	G0file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG0.dat"
-	G2file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG2.dat"
-	G22file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG22.dat"
-	G4file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG4.dat"
-end
+# ╔═╡ b9366976-4153-4006-b7d1-4736b3daa787
+G0file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG0.dat"
 
-# ╔═╡ 68b1ea21-aabf-4bfa-8f4c-8b0ce502aae0
+# ╔═╡ e9a73f82-574b-4224-bd75-79dfd49b4e59
+G2file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG2.dat"
+
+# ╔═╡ 8031057a-6679-4338-b41e-5f6b4a25f154
+G22file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG22.dat"
+
+# ╔═╡ 92ae4fc1-711c-44cb-870b-3259a92f9834
+G4file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG4.dat"
+
+# ╔═╡ 538cdea7-031f-4d6f-9e2e-df158516e9d0
 function add_spectra(ξ31, ξ51, G0file, G2file, G22file, G4file)
 	dG0 = readdlm(G0file, Float64)[:,3]
 	dG2 = readdlm(G2file, Float64)[:,3]
@@ -128,48 +139,41 @@ function add_spectra(ξ31, ξ51, G0file, G2file, G22file, G4file)
 	return dG
 end
 
-# ╔═╡ 90cd9654-c72f-4683-b271-09945a004b84
-ξ31 = xi31
+# ╔═╡ f7a4f137-867b-4b5f-8e94-224902c2117b
+md"""
+$\frac{d\Gamma}{dT_{ee}} \sim \frac{dG_0}{dT_{ee}} + \xi_{31}\frac{dG_2}{dT_{ee}} + \frac{1}{3}(\xi_{31})^2\frac{dG_{22}}{dT_{ee}} + (\frac{1}{3}(\xi_{31})^2 + \xi_{51})\frac{dG_4}{dT_{ee}}$. 
+"""
 
-# ╔═╡ 0e549c15-9ac6-48a4-803d-a5dd77c4cf8c
+# ╔═╡ 29b32c6c-c04c-42e3-a238-0e1a3dd5c732
+ξ31 = 0.6
+
+# ╔═╡ 34f0d68e-e08b-4b00-a164-84f1ecf78242
 Kappa = round(get_kappa(ξ31), digits = 4)
 
-# ╔═╡ 9577b8ee-38e4-43b8-9eac-21ff84316c01
-# ╠═╡ disabled = true
-#=╠═╡
+# ╔═╡ f8369815-7144-4a31-a658-4dcc01683fca
 dG = add_spectra(ξ31, ξ51, G0file, G2file, G22file, G4file);
-  ╠═╡ =#
 
-# ╔═╡ 516b858c-310c-455f-a1da-1a8b09ee0508
-# ╠═╡ disabled = true
-#=╠═╡
+# ╔═╡ a3c17d4e-1d53-4ace-bc9f-07e6f9d76809
 begin 
 	E1 = readdlm(G0file, Float64)[:,1]
 	E2 = readdlm(G0file, Float64)[:,2]
 end;
-  ╠═╡ =#
 
-# ╔═╡ 4756bd42-67be-4d12-bea7-c6b1b6d89832
-# ╠═╡ disabled = true
-#=╠═╡
+# ╔═╡ ce4b1223-b01c-4fc1-83ad-b3c0260acdd6
+
+
+# ╔═╡ 3ba5d378-54fc-43fb-b5a9-ea55d6cf4c54
 dataDir = "../Data_RebinnedSpectra/Se82/2vbb_Angular/FourOrders/";
-  ╠═╡ =#
 
-# ╔═╡ 17e3a1b5-fbcc-424f-bd71-150214fa8af6
-# ╠═╡ disabled = true
-#=╠═╡
+# ╔═╡ 91825e17-a925-45a5-adc8-0b7a5f832d0b
 saveFileName = "xi51_$ξ51-xi31_$ξ31-K2v_$Kappa-G0_G2_G22_G4.csv";
-  ╠═╡ =#
 
-# ╔═╡ b71730e6-c555-4cb1-92d8-30c7a742f216
-# ╠═╡ disabled = true
-#=╠═╡
+# ╔═╡ 00575fb1-6fe8-4e8c-a734-793f18c57e61
 open(joinpath(dataDir, saveFileName), "w") do io
    writedlm(io, [E1 E2 dG], "    ")
 end
-  ╠═╡ =#
 
-# ╔═╡ 066170fd-0060-41b3-a0f7-9a13cfe3414a
+# ╔═╡ ca7600f1-37ac-4461-82a5-71243a5dc2ee
 md"""
 Now we can use `MPRebinSpectra.jl` to rebin the generated file into format usable for `MPGenbb.jl` This is done in the following steps:
 1. Load the file into a `DataFrame`: `df_raw = CSV.File(inFile, delim = "    ", header = ["E1", "E2", "dGdE"]) |> DataFrame`
@@ -180,29 +184,40 @@ Now we can use `MPRebinSpectra.jl` to rebin the generated file into format usabl
 6. Save file: `CSV.write("spectrumG0_Rebinned_prec0001.csv", df)`
 """
 
-# ╔═╡ 8c910ab6-6554-4ba6-af79-0027c126cbd3
-# ╠═╡ disabled = true
-#=╠═╡
-df_raw = CSV.File(joinpath(dataDir, saveFileName), delim = "    ", header = ["E1", "E2", "dGdE"]) |> DataFrame
-  ╠═╡ =#
+# ╔═╡ 8e7e2bf1-5433-4428-aedb-8c10af4d9a83
+df_raw = CSV.File(saveFileName, delim = "    ", header = ["E1", "E2", "dGdE"]) |> DataFrame
 
-# ╔═╡ 8ef00fec-8be4-4bce-ac20-57ec485c05fc
-# ╠═╡ disabled = true
-#=╠═╡
-df = rebin2D(df_raw, 0.001) |> normalize2D! |> get_cdf!
-  ╠═╡ =#
+# ╔═╡ 905012a0-10d5-42de-afa3-5b14e88fdf5d
+df = rebin2D(df_raw, 0.001)
 
-# ╔═╡ 2f88516f-6eea-45c7-855b-bd13e8182cd4
-# ╠═╡ disabled = true
-#=╠═╡
-CSV.write(joinpath(dataDir,"rebinned", saveFileName), df)
-  ╠═╡ =#
+# ╔═╡ ed5b8e56-aedf-41d6-8c4b-9a101388e3a9
+
+
+# ╔═╡ efa89631-1ab6-4e06-a650-cf837f176886
+# import Pkg; Pkg.add(url="https://github.com/Shoram444/MPRebinSpectra.jl.git")
+
+# ╔═╡ c062c1c1-e6c9-4288-a18a-8ef659aa52b8
+
+
+# ╔═╡ 9fac1f04-96d7-425c-a403-43a5ffed5bc6
+
+
+# ╔═╡ 1f944a9f-b0a4-4d67-b4bd-3e98b069ad5d
+
+
+# ╔═╡ 4545521a-0f9a-4a28-839b-99e8ab3b961a
+
+
+# ╔═╡ 07699174-ce1e-49e0-b30d-4d7e246f7ab4
+
+
+# ╔═╡ 0c716177-89e6-431e-a7d7-b379c642c098
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataFramesMeta = "1313f7d8-7da2-5740-9ea0-a2ca25f37964"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
@@ -210,10 +225,9 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 CSV = "~0.10.9"
-DataFrames = "~1.5.0"
 DataFramesMeta = "~0.13.0"
 Plots = "~1.38.5"
-PlutoUI = "~0.7.50"
+PlutoUI = "~0.7.49"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -222,7 +236,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.2"
 manifest_format = "2.0"
-project_hash = "e25ef69ecea48d59aa82f9c430a52e2920d194d2"
+project_hash = "50b08ab94079caee90fdf9c582640f1ed32d1364"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -834,9 +848,9 @@ version = "1.38.5"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
-git-tree-sha1 = "5bb5129fdd62a2bbbe17c2756932259acf467386"
+git-tree-sha1 = "eadad7b14cf046de6eb41f13c9275e5aa2711ab6"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.50"
+version = "0.7.49"
 
 [[deps.PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -1288,28 +1302,44 @@ version = "1.4.1+0"
 """
 
 # ╔═╡ Cell order:
-# ╟─621dfae8-fa26-4c81-9a18-0f707fa9ca28
-# ╠═1f7b369e-addf-11ed-3732-af564dbcb6f7
-# ╠═1fca8aca-b516-4525-a3bd-a462072ccc76
-# ╠═1eabe1b2-c5de-4a53-8552-44c9f0bf5363
-# ╠═8b241d34-37c5-4f97-9575-fd225fd5b703
-# ╠═cddb1cb9-2d10-4950-8d15-9693a6ff28eb
-# ╠═7150b3a5-6b2e-47b8-8c1c-8ae539a658a9
-# ╠═5c565bc0-323e-4a02-a73d-55d96d7fd1ad
-# ╠═613726b7-bb1c-4890-a27b-b3211f4c249b
-# ╠═e6e39eba-5872-44e1-9075-5500eb43461b
-# ╠═3969ee52-7f7f-49dd-93d9-2edb6796b253
-# ╠═68b1ea21-aabf-4bfa-8f4c-8b0ce502aae0
-# ╠═90cd9654-c72f-4683-b271-09945a004b84
-# ╠═0e549c15-9ac6-48a4-803d-a5dd77c4cf8c
-# ╠═9577b8ee-38e4-43b8-9eac-21ff84316c01
-# ╠═516b858c-310c-455f-a1da-1a8b09ee0508
-# ╠═4756bd42-67be-4d12-bea7-c6b1b6d89832
-# ╠═17e3a1b5-fbcc-424f-bd71-150214fa8af6
-# ╠═b71730e6-c555-4cb1-92d8-30c7a742f216
-# ╠═066170fd-0060-41b3-a0f7-9a13cfe3414a
-# ╠═8c910ab6-6554-4ba6-af79-0027c126cbd3
-# ╠═8ef00fec-8be4-4bce-ac20-57ec485c05fc
-# ╠═2f88516f-6eea-45c7-855b-bd13e8182cd4
+# ╠═e4c48ebc-9f59-4244-9b51-ac7cd78276c2
+# ╠═57f1eb97-178c-4b74-94b7-cc22242082a4
+# ╠═54629bfc-2090-43d7-8566-c88919d81e14
+# ╠═f501d3cf-09bf-4506-befe-1eea362cd1dd
+# ╠═a1f0aeec-ad30-11ed-22a5-d5ac85a47f5f
+# ╠═2ae1ccb9-9047-43f6-add6-4adce49e28d1
+# ╠═f0f38ea7-337e-45d1-a34c-d0ad898516fc
+# ╠═079a63b1-6c98-412f-8ee5-02a478478b3d
+# ╠═7ffa46de-77f8-49ca-aa95-a80683db7052
+# ╠═6b6a5f2a-130d-490b-a801-4202088d6823
+# ╠═c522d4df-456b-416e-8c3d-6e59d14fcbf6
+# ╠═28b2613c-ab28-42ea-bd5a-65ac9362fbc3
+# ╠═c07a5083-f5f8-4711-91ea-e38598da82f9
+# ╠═b9366976-4153-4006-b7d1-4736b3daa787
+# ╠═e9a73f82-574b-4224-bd75-79dfd49b4e59
+# ╠═8031057a-6679-4338-b41e-5f6b4a25f154
+# ╠═92ae4fc1-711c-44cb-870b-3259a92f9834
+# ╠═538cdea7-031f-4d6f-9e2e-df158516e9d0
+# ╟─f7a4f137-867b-4b5f-8e94-224902c2117b
+# ╠═29b32c6c-c04c-42e3-a238-0e1a3dd5c732
+# ╠═34f0d68e-e08b-4b00-a164-84f1ecf78242
+# ╠═f8369815-7144-4a31-a658-4dcc01683fca
+# ╠═a3c17d4e-1d53-4ace-bc9f-07e6f9d76809
+# ╟─ce4b1223-b01c-4fc1-83ad-b3c0260acdd6
+# ╠═3ba5d378-54fc-43fb-b5a9-ea55d6cf4c54
+# ╠═91825e17-a925-45a5-adc8-0b7a5f832d0b
+# ╠═00575fb1-6fe8-4e8c-a734-793f18c57e61
+# ╠═ca7600f1-37ac-4461-82a5-71243a5dc2ee
+# ╠═7e30bede-6ec7-4d31-bc28-65a7ed3bfa37
+# ╠═8e7e2bf1-5433-4428-aedb-8c10af4d9a83
+# ╠═905012a0-10d5-42de-afa3-5b14e88fdf5d
+# ╠═ed5b8e56-aedf-41d6-8c4b-9a101388e3a9
+# ╠═efa89631-1ab6-4e06-a650-cf837f176886
+# ╠═c062c1c1-e6c9-4288-a18a-8ef659aa52b8
+# ╠═9fac1f04-96d7-425c-a403-43a5ffed5bc6
+# ╠═1f944a9f-b0a4-4d67-b4bd-3e98b069ad5d
+# ╠═4545521a-0f9a-4a28-839b-99e8ab3b961a
+# ╠═07699174-ce1e-49e0-b30d-4d7e246f7ab4
+# ╠═0c716177-89e6-431e-a7d7-b379c642c098
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

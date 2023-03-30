@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.17
+# v0.19.22
 
 using Markdown
 using InteractiveUtils
@@ -19,6 +19,18 @@ begin
 	AM = include("/home/shoram/Work/PhD_Thesis/SNImproved2bbSpectra/AnalysisModule.jl")
 end
 
+# ╔═╡ 5617f5e2-557f-49b9-84c0-375ef044e62d
+using PlutoUI
+
+# ╔═╡ b4474363-09d0-424c-a823-c417ed3562c5
+using HypothesisTests
+
+# ╔═╡ c1d16c13-c81e-40e9-959c-a0205e86279f
+using LaTeXStrings
+
+# ╔═╡ ac111893-8e0b-4668-b8db-2340e1f7ddf0
+using Random, CategoricalArrays
+
 # ╔═╡ afeccb00-7abf-11ed-194a-558eaaa68040
 md"""
 Analysis notebook for improved ``2\nu\beta\beta`` spectra. 
@@ -26,7 +38,7 @@ Analysis notebook for improved ``2\nu\beta\beta`` spectra.
 The **goal** of this analysis is to compare 2 (slighty) different angular distributions. 
 
 The **methodology** used in the analysis is as follows. First, the angular distribution of ``2\nu\beta\beta`` is given by the equation:
-``\frac{d\Gamma}{dcos(\theta)} \sim N(1 + K (\xi_{31}, \xi_{51})cos\theta)``, equation (24) from paper by Odiviu. In the initial stage of the analysis 2 sets of ``2\nu\beta\beta`` spectra were simulated in Falaise, ``1e8`` simulated events each. First, a spectrum with ``K = -1.0`` and second with ``K = -0.65`` (a somewhat arbitrary value, close to what is mentioned in table (3) in Ovidiu's paper). The simulated data were passed through flreconstruct and the following data cuts were applied: 
+``\frac{d\Gamma}{dcos(\theta)} \sim N(1 + K (\xi_{31}, \xi_{51})cos\theta)``, equation (24) from paper by Odiviu. In the initial stage of the analysis 2 sets of ``2\nu\beta\beta`` spectra were simulated in Falaise, ``1e8`` simulated events each. First, a spectrum with ``K = -0.658`` (calculated with HSD in mind) and second spectrum is the default one in Falaise . The simulated data were passed through flreconstruct and the following data cuts were applied: 
 
 1. 	Two negatively charged tracks reconstructed,
 2. 	Two vertices on the source foil, within given distance from each other,
@@ -73,7 +85,9 @@ begin
 	    bottom_margin  = 6Plots.mm,
 	    dpi            = 200,
 	    :colorbar_titlefontsize => 20,
-	    widen = :false
+	    widen = :false,
+		:markerstrokewidth => 1,
+		:markerstrokecolor => :black,
 	);
 
 end
@@ -91,8 +105,8 @@ end
 dfs = DataFrame[]
 
 # ╔═╡ a7e6341c-6f8b-42a6-b440-368fea258855
-files= ["/home/shoram/Work/PhD_Thesis/Job17/Data/kappa_-0.65/MomPosEneThetaPhi_97e6E_k_m065.root", 
-        "/home/shoram/Work/PhD_Thesis/Job17/Data/kappa_-1.0/MomPosEneThetaPhi_98e6E.root"]
+files= ["/home/shoram/Work/PhD_Thesis/Job17/Data/Falaise_Spectrum_1e8E.root",
+"/home/shoram/Work/PhD_Thesis/Job17/Data/Spectrum_G0_G2_G22_G4_kappa_m06583_xi31_06_xi51_01397_1e8E.root"]
 
 # ╔═╡ 6424e544-8aae-4e2e-82ce-f07c0c9e8083
 # loading data from files to a DataFrame
@@ -104,7 +118,7 @@ for (i,file) in enumerate(files)
 		["theta", "phi", "reconstructedEnergy1", "reconstructedEnergy2"]
 	) |> DataFrame
 	
-    kappa = i == 1 ? -0.65 : -1.0
+    kappa = i == 1 ? "SM" : -0.658
     
     @transform! angles :kappa = kappa
     @transform! angles :ESum = :reconstructedEnergy1 + :reconstructedEnergy2
@@ -112,11 +126,14 @@ for (i,file) in enumerate(files)
     push!(dfs, angles)
 end
 
+# ╔═╡ 98ba4665-3ba6-47e3-bbc3-de09788c07d5
+nrow(dfs[1])
+
 # ╔═╡ cad5c29a-f701-478d-902a-1a523137b5ee
 # initializing two empty plots, one for ``\theta`` one for ``\phi``
 begin
-	hist1DPhi = plot();
-	hist1DTheta = plot();
+	hist1DPhi = plot()
+	hist1DTheta = plot()
 	nothing
 end
 
@@ -126,30 +143,31 @@ end
 # ╔═╡ 739884af-76d1-46e8-8ee4-332c9baf40b8
 for i in 1:length(dfs)
     κ = dfs[i].kappa[1]
-    hphi = Hist1D(dfs[i].phi, 0:Δϕ:180)
-    plot!(
-		hist1DPhi, 
-		hphi, 
+    stephist!(
+		hist1DPhi,
+		bins = collect(0:Δϕ:180),
+		dfs[i].phi, 
 		label = "κ = $κ", 
         ylabel = "counts ", 
 		xlabel = "ϕ [°]", 
 		lw = 2, 
-		norm = :false, 
+		norm = :true, 
 		xlims=(0,180), 
-		alpha = 0.2,
+		alpha = 1,
     )
 	
-    htheta = Hist1D(dfs[i].theta, 0:Δϕ:180)
-    plot!(
-		hist1DTheta, 
-		htheta, 
+    # htheta = Hist1D(dfs[i].theta, 0:Δϕ:180)
+    stephist!(
+		hist1DTheta,
+		dfs[i].theta,
+		bins = collect(0:Δϕ:180),
 		label = "κ = $κ",
         ylabel = "counts ", 
 		xlabel = "θ [°]", 
 		lw = 2, 
-		norm = :false, 
+		norm = :true, 
 		xlims = (0,180), 
-		alpha = 0.2
+		alpha = 1
     )
 end
 
@@ -174,52 +192,61 @@ To get a better overview of the differences between the two spectra, let us look
 # ╔═╡ 5113de94-8b41-4f86-99fd-4382142edc28
 # initializing reference histograms
 begin
-	refBinContentPhi = bincounts(Hist1D(dfs[1].phi, 0:Δϕ:180))
-	refBinContentTheta = bincounts(Hist1D(dfs[1].theta, 0:Δϕ:180))
+	hRefPhi = StatsBase.fit(Histogram{Float64},dfs[1].phi, collect(0:Δϕ:180))
+	hRefTheta = StatsBase.fit(Histogram{Float64},dfs[1].theta, collect(0:Δϕ:180))
+	
+	refBinContentPhi = normalize(hRefPhi, mode=:pdf).weights
+	
+	refBinContentTheta = normalize(hRefTheta, mode=:pdf).weights
 end
 
 # ╔═╡ f06ff5ff-6890-482a-b461-bcb2d3c23fb5
 # initializing empty plots for the residuals
 begin
-	residualsPhi = plot();
-	residualsTheta = plot();
+	residualsPhi = hline([0], label ="");
+	residualsTheta = hline([0], label ="");
 	nothing 
 end
 
 # ╔═╡ 26eb6233-2fb5-471a-bcf7-bf6e014fbc0c
-for i in 1:length(dfs)
+for i in 2:length(dfs)
     κ = dfs[i].kappa[1]
-    hPhi = Hist1D(dfs[i].phi, 0:Δϕ:180)
-    binContentPhi = bincounts(hPhi)
-    binCentersPhi = bincenters(hPhi)
-    
-    hTheta = Hist1D(dfs[i].theta, 0:Δϕ:180)
-    binContentTheta = bincounts(hTheta)
-    binCentersTheta = bincenters(hTheta)
+    hPhi = StatsBase.fit(Histogram{Float64}, dfs[i].phi, collect(0:Δϕ:180)) 
+	hPhi.weights = 
+		(normalize(hPhi, mode=:pdf).weights .- refBinContentPhi) ./ refBinContentPhi * 100
+	
+    hTheta = StatsBase.fit(Histogram{Float64},dfs[i].theta, collect(0:Δϕ:180)) 
+	hTheta.weights = 
+		(normalize(hTheta, mode=:pdf).weights .- refBinContentTheta) ./ refBinContentTheta * 100
 
-	plot!(
+	scatter!(
         residualsPhi, 
-        binCentersPhi,
-        ( binContentPhi .- refBinContentPhi) ./ refBinContentPhi .* 100, 
+        midpoints(hPhi.edges[1]),
+		hPhi.weights,
         xlabel = "ϕ",
-        ylabel = " (ϕi - ϕ1)/ϕ1*100 [%]",
+        ylabel = " (ϕ - SM)/SM*100 [%]",
         label  = "",
-        legend = :top,
         lw= 2,
-        seriestype =:stepmid
+		xlims= (0, 180),
+		yerr = sqrt.(abs.(hPhi.weights)),
+		mc = :black
+        # seriestype =:steppre
     )
     
-    plot!(
+    scatter!(
         residualsTheta, 
-        binCentersTheta,
-        ( binContentTheta .- refBinContentTheta) ./ refBinContentTheta .* 100, 
+        midpoints(hTheta.edges[1]),
+		hTheta.weights,
         xlabel = "θ",
-        ylabel = " (θi - θ1)/θ1*100 [%]",
+        ylabel = " (θ - SM)/SM*100 [%]",
         label  = "",
-        legend = :bottom,
         lw= 2,
-        seriestype =:stepmid
+		xlims= (0, 180),
+		yerr = sqrt.(abs.(hTheta.weights)),
+		mc=:black
+        # seriestype =:stepmid
     )
+	
 end	
 
 # ╔═╡ e2595477-a045-4330-9ef9-a246be1a3112
@@ -231,15 +258,20 @@ plot(
     right_margin = 12Plots.mm,
     left_margin = 12Plots.mm,
     size = (1600,800),
-    layout = @layout [ a b ; c{0.3h} d ]
+    # layout = @layout [ a b ; c{0.3h} d ]
 )
+
+# ╔═╡ 1e6c4633-86a2-488c-b725-2bb748e5745b
+savefig("/home/shoram/Work/PhD_Thesis/SNImproved2bbSpectra/angulardists_residuals.png")
+
+# ╔═╡ a2d44175-3dbb-4389-8d36-43af247b3d2f
+savefig("/home/shoram/Work/PhD_Thesis/SNImproved2bbSpectra/energy_residuals.png")
 
 # ╔═╡ 95a6b54a-a692-4477-954f-849f015e6825
 md"""
-**Disclaimer: for the moment we are dealing with unnormalized distributions (though the numbers are similar so it is not a big change after normalization)**
 
-Looking at the two figures for the residuals, we can notice the following. First, for both distributions ``\phi`` and ``\theta`` the biggest difference is at low angles (thougg, we must take into account that the detector performance at such angles is lowered compared to higher angles).
-Second, while the difference for the ``\theta`` distribution can be of the order of ``\sim 75 \%``, the change is nowhere near as drastic for the ``\phi`` distribution. This provides a challenge, as ``\theta`` is not experimentally measurable so we must deal with the smaller difference of the two. 
+Looking at the two figures for the residuals, we can notice the following. First, for both distributions ``\phi`` and ``\theta`` the biggest difference is at low angles (though, we must take into account that the detector performance at such angles is lowered compared to higher angles).
+Second, while the difference for the ``\theta`` distribution can be up to ``\sim 40 \%``, the change is nowhere near as drastic for the ``\phi`` distribution. This provides a challenge, as ``\theta`` is not experimentally measurable so we must deal with the smaller difference of the two. 
 
 **From now on, we will only deal with ``\phi`` distribution**
 """
@@ -358,12 +390,15 @@ Since the behavior of r is very much non-linear (``\tilde M`` rapidly explodes f
 
 Here, the worst case scenario (``r_{max}``) can in some cases exceed 1.0, (ie. ``r > 1.0``). Such regions will be removed from the analysis and will show in the maps as empty squares. 
 
-To answer the question *how many events SN needs to measure to distinguish* we can convert the ``\tilde M(r)`` into the number of events needed ``Stats`` as follows:
-``Stats = \tilde M(r) / \varepsilon ``. That is, we scale the number of needed events in the bin by the proportion of the total events that bin represents. ``Stats`` then gives the total statistics needed to obtain desired ``\tilde M(r)``.
+To answer the question *how many events SN needs to measure to distinguish* we can convert the ``\tilde M(r)`` into the number of events needed ``S`` as follows:
+``S = \tilde M(r) / \varepsilon ``. That is, we scale the number of needed events in the bin by the proportion of the total events that bin represents. ``S`` then gives the total statistics needed to obtain desired ``\tilde M(r)``.
 
 Finally, let us look at all of the mentioned values. 
-In the figure below we show maps for: 1. ``r``, 2.``\Delta r``, 3. ``\Delta r / r *100``, 4. ``r_{min}``, 5. ``r_{max}``, 6. ``\tilde M(r)``, 7. ``\tilde M(r_{min})``, and 8. ``\tilde M(r_{max})``, 9. ``Stats (r)``. 
+In the figure below we show maps for: 1. ``r``, 2.``\Delta r``, 3. ``\Delta r / r *100``, 4. ``r_{min}``, 5. ``r_{max}``, 6. ``\tilde M(r)``, 7. ``\tilde M(r_{min})``, and 8. ``\tilde M(r_{max})``, 9. ``S (r)``. 
 """
+
+# ╔═╡ e7eb06a2-9ff1-4169-81dc-45b21c2134ae
+nSigma = 2.576 # 1 -> 68, 1.645 -> 90, 1.96 -> 95, 2.576 -> 99
 
 # ╔═╡ 953e18ab-482a-4fc0-b993-8701a42b70ea
 # initialize containers for the individual values
@@ -398,12 +433,12 @@ for ϕmin in 0:Δϕ:180-Δϕ
         matRmin[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] = rmin
         matRmax[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] = rmax
         
-        matMr[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] = rmax <= 1.0 ? AM.get_M( r, 1.0 ) : NaN
-        matMrmin[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] = rmax <= 1.0 ? AM.get_M( rmin, 1.0 ) : NaN
-        matMrmax[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] = AM.get_M( rmax, 1.0 )
+        matMr[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] = rmax <= 1.0 ? AM.get_M( r, nSigma ) : NaN
+        matMrmin[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] = rmax <= 1.0 ? AM.get_M( rmin, nSigma ) : NaN
+        matMrmax[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] = AM.get_M( rmax, nSigma )
 
 		matStatsMr[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] = 
-			matRmax[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] <= 1.0 ? AM.get_needed_statistics(h1, h2, ϕmin, ϕmax, Δϕ, 1.0) : NaN
+			matRmax[Int(ϕmax/Δϕ), Int(ϕmin/Δϕ)+1] <= 1.0 ? AM.get_needed_statistics(h1, h2, ϕmin, ϕmax, Δϕ, nSigma) : NaN
     end
 end
 
@@ -598,14 +633,14 @@ end
 
 # ╔═╡ b0631780-5d84-4033-a920-cfde28008aa8
 md"""
-The resultant minimal values are:
+The optimal values are:
 
  + ``r`` = $minR @ $idx``{}^{\circ}`` 
  + ``\delta r`` = $minRrelativeRatio @ $idxRrelativeRatio``{}^{\circ}``
  + ``M(r)`` = $minMr @ $idxMr``{}^{\circ}``
  + ``M(r_{min})`` = $minMmin @ $idxMmin``{}^{\circ}``
  + ``M(r_{max})`` = $minMmax @ $idxMmax``{}^{\circ}``
- + ``Stats (r)`` = $minStats @ $idxMinStats``{}^{\circ}``
+ + ``S (r)`` = $minStats @ $idxMinStats``{}^{\circ}``
 """
 
 # ╔═╡ ed4d68ee-131a-4a44-99a3-eac9ece030c8
@@ -615,77 +650,493 @@ This is as far as we got so far. Conclusions are not yet made. Further analysis 
 **Question is what combinatiation is best for ``Stats`` and the uncertainties, combined with how well the detector performs for given angular region.**
 """
 
-# ╔═╡ 81926178-9e95-4bd6-ab5f-1c58f64db7a3
-
-
-# ╔═╡ 341343f2-e1a5-4410-a426-4949217993bc
-htheta1 = Hist1D(dfs[1].theta, 0:Δϕ:180)
-
-# ╔═╡ 880b4f59-40e5-416a-81a7-cc359d8a40a2
-shtheta = stephist(dfs[1].theta,
-	nbins = 180,
-	label = "", 
-	ylabel = "counts [#/°]", 
-	xlabel = "θ [°]", 
-	lw = 4, 
-	norm = :false, 
-	xlims=(0,180), 
-	size = (800,600),
-	title="angular distribution"
-)
-
-# ╔═╡ 07594de8-291e-473c-98d8-397af5f3f761
-savefig("thetaDistribution.png")
-
-# ╔═╡ 9bd9b5d4-a83b-4b3d-8ddc-21684e6b50bd
-h2dEnergy = histogram2d(
-	dfs[1].reconstructedEnergy1,
-	dfs[1].reconstructedEnergy2,
-	nbins = (350, 350),
-	c = :coolwarm,
-	xlabel = "E_1 [keV]",
-	ylabel = "E_1 [keV]",
-	colorbar_title = "counts [#/10 keV]",
-	colorbar_titlefontsize = 15,
-	right_margin = 8Plots.mm,
-	title = "Electron Energy Spectrum"
-)
-
-# ╔═╡ 88d968b3-3901-49ff-973d-e4db1006bed6
-savefig("h2dEnergy.png")
-
-# ╔═╡ 79b6d0be-971b-479b-bfa1-35a177a26c64
-plot(shtheta, h2dEnergy, size = (1600, 600), left_margin = 10Plots.mm, right_margin = 10Plots.mm, bottom_margin = 10Plots.mm)
-
-# ╔═╡ bdb336eb-575d-4ea9-a885-e0d4dc8baeea
-savefig("angularPlusEnergyDists.png")
-
-# ╔═╡ b5ed6780-cdbf-43d5-a221-9405f4dbe202
-
-
 # ╔═╡ ac6ee28c-72a2-4e79-8cb1-2f5a60eea8c2
+md"""
+In the following text analysis using KS and ChiSquared hypothesis tests. The goal is to find the ideal value of number of events needed to distinguish (*S*). The methodology is as follows: 
+1. The spectra are split into N random subsets of size *S*
+2. For each subset a KS and ChiSquare hypothesis test is performed and p-value is extracted.
+3. For various values of CL (i.e. 90%, 95%) the corresponding *S* is found.
+"""
 
+# ╔═╡ ad1fbe7a-eeb5-4296-8cfe-eeaa0eb55863
+"""
+ChisqTest(x1, x2, xMin, xMax, nBins)
+
+A modified version of HypothesisTests.ChisqTest() which takes as an input 2 vectors of measured data: x1, x2 and compares their distributions in a histogram form.
+
+Input parameters:
+* x1, x2 are vectors of measured values
+* xMin, xMax, binStep specify the minimum, maximum and step of the bins to compare the distributions
+
+"""
+function ChisqTest(x1, x2, xMin, xMax, binStep)
+	binRange = xMin:binStep:xMax
+	
+	bincounts1 = bincounts(Hist1D(x1, (binRange))) 
+	bincounts2 = bincounts(Hist1D(x2, (binRange))) 
+	
+	n1 = sum(bincounts1)
+	n2 = sum(bincounts2)
+
+	dof = length(bincounts1) # dof
+	
+	p1 = bincounts1 ./ n1
+	p2 = bincounts2 ./ n2 
+	
+	testStatistic = sum((bincounts2 - bincounts1).^2 ./bincounts1)
+	pvalue = ccdf( Chisq(dof), testStatistic )
+	return testStatistic, pvalue, dof
+end
+
+
+# ╔═╡ ed3e6edf-f30e-4f3e-ad25-f00f821cc666
+function HypothesisTests.pvalue(ChiTest::Tuple{Float64, Float64, Int64})
+	return ChiTest[2]
+end
+
+# ╔═╡ 4a804574-30a2-44d7-8762-674e674aa9e5
+function get_samples(data, sample_size, n_samples, replace = false)
+	sample_size = Int(sample_size)
+	n_samples = Int(n_samples)
+	data_size = length(data)
+
+	if(replace == false && sample_size*n_samples > data_size)
+		error("Too many samples, $sample_size*$n_samples is larger than size of data: $data_size")
+	end
+	
+	subsets = Array{Vector{Int}}(undef, n_samples)
+	if(replace == false)
+		sample_indices = StatsBase.sample(1:data_size, sample_size, replace=replace)
+		subsets = [data[sample_size*(x-1)+1: sample_size*x] for x in 1:n_samples]
+	else
+		subsets = [StatsBase.sample(data, sample_size, replace=replace) for x in 1:n_samples]
+	end
+	
+	return subsets
+end
+
+# ╔═╡ 939c997e-f1e6-43b8-8ec5-237e298aa8ad
+begin
+	n_samples = 100
+	pValsKSPhi = []
+	pValsKSEne = []
+
+	pValsChiPhi = []
+	pValsChiEne = []
+end
+
+# ╔═╡ 1e4040f5-c26e-40ec-ae8d-6444c7f4ef28
+sample_sizes = vcat(
+	collect(1000:1000:9000), 
+	collect(10000:1e4:1.5e5)
+)
+
+# ╔═╡ 199b9779-a6f6-4ed7-aa7d-246076751f56
+begin
+	Ene1 = vcat(dfs[1].reconstructedEnergy1, dfs[1].reconstructedEnergy2)
+	Ene2 = vcat(dfs[2].reconstructedEnergy1, dfs[2].reconstructedEnergy2)
+end
+
+# ╔═╡ 04c53484-0c50-4da5-a556-8fb484f6bad4
+begin
+	shEne = stephist( [Ene1, Ene2], nbins = collect(0:30:3000), normed = :true, xlabel = "Energy [keV]", ylabel = "counts", label = [ "ξ31 = 0.37" "SM" ], legend =:topright )
+
+	resEne = hline([0], label ="")
+
+	histEne1 = StatsBase.fit( Histogram{Float32}, Ene1, collect(0:30:3000) ) |> normalize 
+
+	histEne2 = StatsBase.fit( Histogram{Float32}, Ene2, collect(0:30:3000) ) |> normalize 
+
+	residualsEne = (histEne2.weights .- histEne1.weights) ./ histEne1.weights *100
+	
+	scatter!(
+		midpoints(histEne1.edges[1]),
+		residualsEne,
+		yerr = sqrt.(abs.(residualsEne)),
+		c= :black,
+		xlims = (0,3000),
+		label ="",
+		xlabel = "Energy [keV]",
+		ylabel = "(E - SM)/SM*100 [%]"
+	)
+
+	plot( shEne, resEne,  
+		right_margin = 12Plots.mm,
+		left_margin = 12Plots.mm,
+		size = (1000,800),
+		layout = @layout [a;b{0.3h}]
+	)
+end
+
+# ╔═╡ b63c789f-26d1-4894-935b-7daec63915f9
+for (i,sample_size) in enumerate(sample_sizes)
+	phi1Samples = get_samples(dfs[1].phi, sample_size, n_samples, true)
+	phi2Samples = get_samples(dfs[2].phi, sample_size, n_samples, true)
+
+	Ene1Samples = get_samples(Ene1, sample_size, n_samples, true)
+	Ene2Samples = get_samples(Ene2, sample_size, n_samples, true)
+
+	push!(pValsKSPhi, 
+		ApproximateTwoSampleKSTest.(phi1Samples, phi2Samples) .|> pvalue )
+
+	push!(pValsKSEne, 
+		ApproximateTwoSampleKSTest.(Ene1Samples, Ene2Samples) .|> pvalue )
+
+	push!(pValsChiPhi, ChisqTest.(phi1Samples, phi2Samples, 0, 180, 10) .|> pvalue)
+	
+	push!(pValsChiEne, ChisqTest.(Ene1Samples, Ene2Samples, 300, 2000, 150) .|> pvalue)
+	
+end
+
+
+# ╔═╡ 15d6fa2a-d3d4-4848-af09-7c081dd8f4e7
+begin
+	meansKSPhi = mean.(pValsKSPhi)
+	varsKSPhi = std.(pValsKSPhi)
+	meansKSEne = mean.(pValsKSEne)
+	varsKSEne = std.(pValsKSEne)
+
+	meansChiPhi = mean.(pValsChiPhi) #mean.( filter.( x -> x >= 0.0, pValsChiPhi ) )
+	varsChiPhi = std.(pValsChiPhi)   #std.( filter.( x -> x >= 0.0, pValsChiPhi ) )
+	meansChiEne = mean.(pValsChiEne) #mean.( filter.( x -> x >= 0.0, pValsChiEne ) )
+	varsChiEne =  std.(pValsChiEne)  #std.( filter.( x -> x >= 0.0, pValsChiEne ) )
+end
+
+# ╔═╡ 51c2801e-7051-490a-bd68-1dceb9d7f7f9
+md"""
+First, we can look at a boxplot of the obtained p-values obtained from KS test for ϕ for each sample size. 
+We can see that for smaller sample sizes the p-values vary greatly. Whereas for larger sample sizes, i.e. ``N>100k`` events it is very close to zero.
+"""
+
+# ╔═╡ f7f65fe2-f2cd-413d-8b6d-dbc5298617df
+begin
+	boxplot(pValsKSPhi, label = "", xticks=(1:length(sample_sizes), sample_sizes), xrotation = 45, c=1, fa = 0.5, xlabel = "sample size", ylabel ="p-value", title= "ϕ: KS test for various sample sized")
+	lens!([length(sample_sizes)-12, length(sample_sizes)], [0.0, 0.05], inset = (1, bbox(0.57, 0.5, 0.4, 0.2)), lc=:black, lw =:3, xrotation=45, framestyle =:box)
+
+	xaxis!(xticks=(length(sample_sizes)-12:length(sample_sizes), sample_sizes[end-12:end]), subplot =2)
+end
+
+# ╔═╡ 05700042-ca64-40d7-8ef2-76a75897fe11
+md"""
+We can also look at the other tests: 
+1. ϕ distribution using KS test
+2. Single electron spectra (E) using KS test
+3. ϕ distribution using Chi2 test
+3. E distribution using Chi2 test
+
+Right away we can see that KS test is more strict when it comes to rejecting H0. 
+"""
+
+# ╔═╡ 51f461ac-be1f-4805-be42-9dde9a22edd6
+begin 
+	bp1 =boxplot(pValsKSPhi, label = "", 
+		xticks=:none,# (1:length(sample_sizes), sample_sizes), 
+		xrotation = 45, c=1, fa = 0.5, ylabel ="p-value", title= "ϕ: KS")
+
+	bp2 =boxplot(pValsKSEne, label = "", 
+		xticks=:none, #(1:length(sample_sizes), sample_sizes), 
+		xrotation = 45, c=2, fa = 0.5, title= "E: KS")
+
+	bp3 =boxplot(filter!.(x -> x .>=0, pValsChiPhi), label = "", xticks=(1:length(sample_sizes), sample_sizes), xrotation = 55, c=3, fa = 0.5, xlabel = "sample size", ylabel ="p-value", title= "ϕ: Chi2")
+
+	bp4 =boxplot(filter!.(x -> x .>=0, pValsChiEne), label = "", xticks=(1:length(sample_sizes), sample_sizes), xrotation = 55, c=1, fa = 0.5, xlabel = "sample size", title= "E: Chi2")
+
+	plot(bp1, bp2, bp3, bp4, size =(1100, 1100), thickness_scaling=1.1)
+
+end
+
+# ╔═╡ 10d68352-3351-4bc7-a6cd-edc9ca207f16
+md"""
+To better see the trend of the tests when compared to various sample sizes we can look at how the mean of each subset changes with changing the sample size. 
+"""
+
+# ╔═╡ 52d44aa6-9eae-478d-8a2d-5cd44aee05df
+plot(
+	[sample_sizes sample_sizes sample_sizes sample_sizes],
+	[meansKSPhi meansKSEne meansChiPhi meansChiEne], 
+	# ribbon = [varsKSPhi varsKSEne varsChiPhi varsChiEne], 
+	marker=[:circle :x :square :utriangle], 
+	label =["KS: ϕ" "KS: E" "Chi: ϕ" "Chi: E"], 
+	ylims = (1e-12,1e-1), 
+	yscale = :log10,
+	legend = :topright, 
+	xlabel = "number of events", 
+	ylabel = "p-value",
+	title= "mean of p-values \n$n_samples random samples of specified sample sizes"
+)
+
+# ╔═╡ ffe5994b-5ea9-4dd9-a878-23c1b5b32371
+md"""
+Lastly, to better obtain our desired *S*, we plot values for ``(1-p)`` along with lines for 90% and 95% confidence level. In order to determine *S* we simply look for the number at which the value ``(1-p)>CL``. 
+"""
+
+# ╔═╡ 0eb54fbe-f4d5-4797-9560-d89d2d9a47e1
+begin
+	plot(	
+		[sample_sizes sample_sizes sample_sizes sample_sizes],
+		[1 .- meansKSPhi 1 .- meansKSEne 1 .- meansChiPhi 1 .- meansChiEne], 
+		# ribbon = [varsKSPhi varsKSEne varsChiPhi varsChiEne], 
+		marker=[:circle :x :square :utriangle], 
+		label =["KS: ϕ" "KS: E" "Chi: ϕ" "Chi: E"], 
+		ylims = (0.8,1), 
+		# yscale = :log10,
+		legend = :topright, 
+		xlabel = "number of events", 
+		ylabel = "CL",
+		title= "CL \n$n_samples random samples of specified sample sizes",
+	)
+	hline!([0.90 0.95], label = ["90%" "95"])
+end
+
+# ╔═╡ 75f2bc28-529e-47e1-95cf-e8a6b2f864ec
+md"""
+However, since it can be seen that the p-values vary greatly, we can perform an additional analysis by looking at the efficiency of rejecting H0 for various sample sizes. That is, for each subset of size ``N`` we compute efficiency as ``\varepsilon = \frac{N_{reject}}{N}``. 
+"""
+
+# ╔═╡ 0c7d4fb7-623a-47bd-bf88-af88591b95d7
+begin
+	alpha = 1-0.90
+
+	effKSPhi95 = count.(p -> p<=alpha, pValsKSPhi)./length.(pValsKSPhi).*100
+	effKSEne95 = count.(p -> p<=alpha, pValsKSEne)./length.(pValsKSEne).*100
+	
+	effChiPhi95 = count.(p -> p<=alpha, pValsChiPhi)./length.(pValsChiPhi).*100
+	effChiEne95 = count.(p -> p<=alpha, pValsChiEne)./length.(pValsChiEne).*100
+	
+	effsTogether = hcat(effKSPhi95,effKSEne95, effChiPhi95, effChiEne95)
+
+	nothing
+end
+
+# ╔═╡ bd054871-3e62-4d8c-bc06-b5613507e5fa
+size(effsTogether), length(sample_sizes), length(pValsKSPhi)
+
+# ╔═╡ 374ba8ed-43b4-476f-9c95-1415048d7006
+grps=repeat(["KS: ϕ", "KS: E", "Chi: ϕ", "Chi: E"], inner = size(effsTogether)[1])
+
+# ╔═╡ a8099841-3732-419f-be73-ff8d45340d98
+names = repeat(1:size(effsTogether)[1], outer = size(effsTogether)[2]);
+
+# ╔═╡ a06fbb9a-203c-4a02-90fa-6541d4b8c29a
+function prop_error(npassed, ntot)
+	p = npassed/ntot
+	return sqrt(p*(1-p)/ntot)
+end
+
+# ╔═╡ 02b064da-b41e-499e-ae0a-fc60dbb303d1
+md"""
+Here we can see the efficiencies for various sample sizes and various hypothesis tests. The uncertainties were calculated according to the proportional rule as defined in XXXX. 
+"""
+
+# ╔═╡ e0e2ae34-6916-4135-b774-e6e3b2152713
+effsTogether
+
+# ╔═╡ a42e9278-6913-4c47-8dcf-46452155f75c
+savefig("/home/shoram/Work/PhD_Thesis/SNImproved2bbSpectra/efficiency_CL$(100-alpha*100).png")
+
+# ╔═╡ 5163e320-0711-42e8-89c6-90994f612c56
+md"""
+Finally we can create a table of *S* for the various defined methods and sample sizes.
+"""
+
+# ╔═╡ 15149b75-4ce7-472c-adfa-8d4ad153ba95
+md"""
+CL\method | KS | Χ² | bin-by-bin
+-------------|-----|----|-----------
+68%          |40k  |20k |10k
+90%          |80k  |40k |28k
+95%          |80k  |70k |39k
+99%          |100k |80k |68k
+
+"""
+
+# ╔═╡ 48f62a32-a4b1-4847-b6e3-562d81ebb8b0
+function prop_error1(npassed, ntot, percent = false)
+	if (ntot != 100)
+		error("Uncertainties were calculated only for N=100, provided N=$ntot!")
+	end
+	
+	errors100 = [0.000000e+00 0.000000e+00 1.121807e-02
+	1.000000e-02 2.785118e-03 2.456629e-02
+	2.000000e-02 8.872022e-03 3.791181e-02
+	3.000000e-02 1.592492e-02 5.066677e-02
+	4.000000e-02 2.334868e-02 6.289157e-02
+	5.000000e-02 3.112133e-02 7.485862e-02
+	6.000000e-02 3.921413e-02 8.669834e-02
+	7.000000e-02 4.744811e-02 9.832986e-02
+	8.000000e-02 5.580855e-02 1.098041e-01
+	9.000000e-02 6.430260e-02 1.211748e-01
+	1.000000e-01 7.280360e-02 1.323494e-01
+	1.100000e-01 8.157604e-02 1.436188e-01
+	1.200000e-01 9.018141e-02 1.545652e-01
+	1.300000e-01 9.897695e-02 1.655619e-01
+	1.400000e-01 1.079330e-01 1.765921e-01
+	1.500000e-01 1.169662e-01 1.875845e-01
+	1.600000e-01 1.259758e-01 1.984475e-01
+	1.700000e-01 1.349889e-01 2.092161e-01
+	1.800000e-01 1.441486e-01 2.200400e-01
+	1.900000e-01 1.532961e-01 2.307665e-01
+	2.000000e-01 1.624585e-01 2.414277e-01
+	2.100000e-01 1.718053e-01 2.521980e-01
+	2.200000e-01 1.808864e-01 2.626301e-01
+	2.300000e-01 1.900989e-01 2.731261e-01
+	2.400000e-01 1.995199e-01 2.837646e-01
+	2.500000e-01 2.089822e-01 2.943826e-01
+	2.600000e-01 2.181381e-01 3.046348e-01
+	2.700000e-01 2.277205e-01 3.152546e-01
+	2.800000e-01 2.372144e-01 3.257311e-01
+	2.900000e-01 2.466333e-01 3.360787e-01
+	3.000000e-01 2.561578e-01 3.464801e-01
+	3.100000e-01 2.656193e-01 3.567676e-01
+	3.200000e-01 2.752097e-01 3.671350e-01
+	3.300000e-01 2.847895e-01 3.774437e-01
+	3.400000e-01 2.943707e-01 3.877069e-01
+	3.500000e-01 3.039832e-01 3.979556e-01
+	3.600000e-01 3.136907e-01 4.082545e-01
+	3.700000e-01 3.232659e-01 4.183768e-01
+	3.800000e-01 3.330313e-01 4.286461e-01
+	3.900000e-01 3.427805e-01 4.388567e-01
+	4.000000e-01 3.523695e-01 4.488647e-01
+	4.100000e-01 3.620832e-01 4.589562e-01
+	4.200000e-01 3.819674e-01 4.817691e-01
+	4.300000e-01 3.817180e-01 4.792238e-01
+	4.400000e-01 3.915312e-01 4.892929e-01
+	4.500000e-01 4.012813e-01 4.992590e-01
+	4.600000e-01 4.111368e-01 5.092910e-01
+	4.700000e-01 4.210735e-01 5.193646e-01
+	4.800000e-01 4.308871e-01 5.292759e-01
+	4.900000e-01 4.407896e-01 5.392371e-01
+	5.000000e-01 4.507300e-01 5.491970e-01
+	5.100000e-01 4.607081e-01 5.591555e-01
+	5.200000e-01 4.706580e-01 5.690469e-01
+	5.300000e-01 4.806541e-01 5.789452e-01
+	5.400000e-01 4.906886e-01 5.888428e-01
+	5.500000e-01 5.006331e-01 5.986110e-01
+	5.600000e-01 5.107426e-01 6.085044e-01
+	5.700000e-01 5.207335e-01 6.182394e-01
+	5.800000e-01 5.308928e-01 6.281026e-01
+	5.900000e-01 5.410829e-01 6.379562e-01
+	6.000000e-01 5.509821e-01 6.474777e-01
+	6.100000e-01 5.729496e-01 6.728868e-01
+	6.200000e-01 5.714176e-01 6.670326e-01
+	6.300000e-01 5.816934e-01 6.768047e-01
+	6.400000e-01 5.918487e-01 6.864127e-01
+	6.500000e-01 6.020150e-01 6.959877e-01
+	6.600000e-01 6.121861e-01 7.055228e-01
+	6.700000e-01 6.225794e-01 7.152338e-01
+	6.800000e-01 6.328929e-01 7.248185e-01
+	6.900000e-01 6.431387e-01 7.342874e-01
+	7.000000e-01 6.535195e-01 7.438421e-01
+	7.100000e-01 6.639322e-01 7.533781e-01
+	7.200000e-01 6.742636e-01 7.627807e-01
+	7.300000e-01 6.847801e-01 7.723147e-01
+	7.400000e-01 6.952072e-01 7.817037e-01
+	7.500000e-01 7.056463e-01 7.910470e-01
+	7.600000e-01 7.162040e-01 8.004492e-01
+	7.700000e-01 7.266659e-01 8.096932e-01
+	7.800000e-01 7.372987e-01 8.190429e-01
+	7.900000e-01 7.478892e-01 8.282821e-01
+	8.000000e-01 7.585576e-01 8.375274e-01
+	8.100000e-01 7.692570e-01 8.467280e-01
+	8.200000e-01 7.799368e-01 8.558289e-01
+	8.300000e-01 7.906863e-01 8.649141e-01
+	8.400000e-01 8.015840e-01 8.740563e-01
+	8.500000e-01 8.124342e-01 8.830531e-01
+	8.600000e-01 8.233340e-01 8.919935e-01
+	8.700000e-01 8.342813e-01 9.008663e-01
+	8.800000e-01 8.453380e-01 9.097222e-01
+	8.900000e-01 8.564406e-01 9.184840e-01
+	9.000000e-01 8.675766e-01 9.271231e-01
+	9.100000e-01 8.788755e-01 9.357484e-01
+	9.200000e-01 8.902361e-01 9.442324e-01
+	9.300000e-01 9.017385e-01 9.526210e-01
+	9.400000e-01 9.133407e-01 9.608256e-01
+	9.500000e-01 9.251661e-01 9.689042e-01
+	9.600000e-01 9.371470e-01 9.766907e-01
+	9.700000e-01 9.494374e-01 9.841794e-01
+	9.800000e-01 9.621476e-01 9.911880e-01
+	9.900000e-01 9.754569e-01 9.972389e-01
+	1.000000e+00 9.887819e-01 1.000000e+00]
+
+	lower = npassed/100-errors100[Int(npassed)+1,2]
+	upper = errors100[Int(npassed)+1,3]-npassed/100
+	
+	return percent ? (lower*100, upper*100) : (lower, upper)
+end		
+
+# ╔═╡ 0a7d15bb-c7e0-48dd-bd0d-043dc38de52e
+begin
+	
+	passedKSPhi = count.(p -> p<=alpha, pValsKSPhi)
+	passedKSEne = count.(p -> p<=alpha, pValsKSEne)
+
+	passedChiPhi = count.(p -> p<=alpha, pValsChiPhi)
+	passedChiEne = count.(p -> p<=alpha, pValsChiEne)
+	
+	errKSPhi = prop_error1.(passedKSPhi, length(pValsKSPhi[1]), true)
+	errKSEne = prop_error1.(passedKSEne, length(pValsKSEne[1]), true)
+
+	errChiPhi = prop_error1.(passedChiPhi, 100, true)
+	errChiEne = prop_error1.(passedChiEne, 100, true)
+	nothing
+end
+
+# ╔═╡ c3a2b06e-bb16-4cef-90e6-8e2828c3ddb6
+passedChiPhi, errChiPhi, passedChiPhi .+ last.(errChiPhi)
+
+# ╔═╡ c06231b4-cdac-4c87-a705-494fdf684580
+vcat(errKSPhi,errKSEne, errChiPhi, errChiEne)
+
+# ╔═╡ 5b53a6d2-35bb-4be4-89c8-b0bd846fd44d
+groupedbar(
+	names, 
+	effsTogether, 
+	group = grps, 
+	ylabel = "efficiency", 
+    xlabel = "sample size",
+	title  = "efficiency of passing KS/Χ2 test for CL = $((1-alpha)*100)%",
+	xticks = (1:length(sample_sizes), sample_sizes),
+	xrotation=45,
+	c = [4 3 2 1],
+	size = (3600,800),
+	thickness_scaling = 1.75,
+	bar_width = 0.9,
+	yerr = vcat(errKSPhi, errKSEne, errChiPhi, errChiEne),
+	legend= :outerright,
+	minorgrid=:off,
+	fa = 0.5,
+	bar_position = :dodge
+)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataFramesMeta = "1313f7d8-7da2-5740-9ea0-a2ca25f37964"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 FHist = "68837c9b-b678-4cd5-9925-8a54edc8f695"
+HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 UnROOT = "3cd96dde-e98d-4713-81e9-a4a1b0235ce9"
 
 [compat]
+CategoricalArrays = "~0.10.7"
 ColorSchemes = "~3.20.0"
 DataFrames = "~1.4.4"
 DataFramesMeta = "~0.12.0"
 Distributions = "~0.25.79"
 FHist = "~0.9.0"
+HypothesisTests = "~0.10.11"
+LaTeXStrings = "~1.3.0"
+PlutoUI = "~0.7.50"
 Polynomials = "~3.2.1"
 Revise = "~3.5.0"
 StatsBase = "~0.33.21"
@@ -699,13 +1150,19 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.8.2"
 manifest_format = "2.0"
-project_hash = "52a7c11c7e4861b5c99d6e4aff0cc597c2990aca"
+project_hash = "278e617c37e8e0ad6735abaccf024909854c3efa"
 
 [[deps.AbstractFFTs]]
 deps = ["ChainRulesCore", "LinearAlgebra"]
 git-tree-sha1 = "69f7020bd72f069c219b5e8c236c1fa90d2cb409"
 uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
 version = "1.2.1"
+
+[[deps.AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "8eaf9f1b4921132a4cff3f36a1d9ba923b14a481"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.1.4"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "52b3b436f8f73133d7bc3a6c71ee7ed6ab2ab754"
@@ -785,6 +1242,12 @@ git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
 uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 version = "0.5.1"
 
+[[deps.CategoricalArrays]]
+deps = ["DataAPI", "Future", "Missings", "Printf", "Requires", "Statistics", "Unicode"]
+git-tree-sha1 = "5084cc1a28976dd1642c9f337b28a3cb03e0f7d2"
+uuid = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+version = "0.10.7"
+
 [[deps.Chain]]
 git-tree-sha1 = "8c4920235f6c561e401dfe569beb8b924adad003"
 uuid = "8be319e6-bccf-4806-a6f7-6fae938471bc"
@@ -861,6 +1324,16 @@ deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
 git-tree-sha1 = "fc08e5930ee9a4e03f84bfb5211cb54e7769758a"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.10"
+
+[[deps.Combinatorics]]
+git-tree-sha1 = "08c8b6831dc00bfea825826be0bc8336fc369860"
+uuid = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+version = "1.0.2"
+
+[[deps.CommonSolve]]
+git-tree-sha1 = "9441451ee712d1aec22edad62db1a9af3dc8d852"
+uuid = "38540f10-b2f7-11e9-35d8-d573e4eb0ff2"
+version = "0.2.3"
 
 [[deps.Compat]]
 deps = ["Dates", "LinearAlgebra", "UUIDs"]
@@ -1126,6 +1599,30 @@ git-tree-sha1 = "709d864e3ed6e3545230601f94e11ebc65994641"
 uuid = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
 version = "0.3.11"
 
+[[deps.Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
+[[deps.HypertextLiteral]]
+deps = ["Tricks"]
+git-tree-sha1 = "c47c5fa4c5308f27ccaac35504858d8914e102f9"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.4"
+
+[[deps.HypothesisTests]]
+deps = ["Combinatorics", "Distributions", "LinearAlgebra", "Random", "Rmath", "Roots", "Statistics", "StatsBase"]
+git-tree-sha1 = "ae3b6964d58df11984d22644ce5546eaf20fe95d"
+uuid = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
+version = "0.10.11"
+
+[[deps.IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.2"
+
 [[deps.IniFile]]
 git-tree-sha1 = "f550e6e32074c939295eb5ea6de31849ac2c9625"
 uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
@@ -1360,6 +1857,11 @@ git-tree-sha1 = "5d494bc6e85c4c9b626ee0cab05daa4085486ab1"
 uuid = "5ced341a-0733-55b8-9ab6-a4889d929147"
 version = "1.9.3+0"
 
+[[deps.MIMEs]]
+git-tree-sha1 = "65f28ad4b594aebe22157d6fac869786a255b7eb"
+uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
+version = "0.1.4"
+
 [[deps.MKL_jll]]
 deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
 git-tree-sha1 = "2ce8695e1e699b68702c03402672a69f54b8aca9"
@@ -1570,6 +2072,12 @@ git-tree-sha1 = "02ecc6a3427e7edfff1cebcf66c1f93dd77760ec"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.38.1"
 
+[[deps.PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
+git-tree-sha1 = "5bb5129fdd62a2bbbe17c2756932259acf467386"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.50"
+
 [[deps.Polynomials]]
 deps = ["LinearAlgebra", "RecipesBase"]
 git-tree-sha1 = "6ea39b2399c92b83036ef26d8bab9cd017b9a8c4"
@@ -1671,6 +2179,12 @@ git-tree-sha1 = "68db32dff12bb6127bac73c209881191bf0efbb7"
 uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
 version = "0.3.0+0"
 
+[[deps.Roots]]
+deps = ["ChainRulesCore", "CommonSolve", "Printf", "Setfield"]
+git-tree-sha1 = "a3db467ce768343235032a1ca0830fc64158dadf"
+uuid = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
+version = "2.0.8"
+
 [[deps.SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 version = "0.7.0"
@@ -1689,6 +2203,12 @@ version = "1.3.16"
 
 [[deps.Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+
+[[deps.Setfield]]
+deps = ["ConstructionBase", "Future", "MacroTools", "StaticArraysCore"]
+git-tree-sha1 = "e2cc6d8c88613c05e1defb55170bf5ff211fbeac"
+uuid = "efcf1570-3423-57d1-acb7-fd33fddbac46"
+version = "1.1.1"
 
 [[deps.SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
@@ -1826,6 +2346,11 @@ deps = ["Random", "Test"]
 git-tree-sha1 = "e4bdc63f5c6d62e80eb1c0043fcc0360d5950ff7"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.9.10"
+
+[[deps.Tricks]]
+git-tree-sha1 = "6bac775f2d42a611cdfcd1fb217ee719630c4175"
+uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
+version = "0.1.6"
 
 [[deps.URIs]]
 git-tree-sha1 = "ac00576f90d8a259f2c9d823e91d1de3fd44d348"
@@ -2136,24 +2661,29 @@ version = "0.31.1+0"
 
 # ╔═╡ Cell order:
 # ╟─afeccb00-7abf-11ed-194a-558eaaa68040
-# ╟─08758fc3-92d5-45cd-966c-b9f052912d10
+# ╠═08758fc3-92d5-45cd-966c-b9f052912d10
 # ╠═411eeb6b-6902-4cd9-8bda-8ebae1de81b1
+# ╠═5617f5e2-557f-49b9-84c0-375ef044e62d
 # ╠═5565017c-534f-46a5-b86b-37753c42da24
-# ╟─68624ab0-a258-4132-8e5a-54da853d856d
+# ╠═68624ab0-a258-4132-8e5a-54da853d856d
 # ╠═66154af6-bb40-46d8-84c4-3e350acb8676
 # ╠═a7e6341c-6f8b-42a6-b440-368fea258855
 # ╠═6424e544-8aae-4e2e-82ce-f07c0c9e8083
+# ╠═98ba4665-3ba6-47e3-bbc3-de09788c07d5
 # ╠═cad5c29a-f701-478d-902a-1a523137b5ee
 # ╠═6c4cc9cc-3344-4ff0-bed3-df7ba1d00bc7
 # ╠═739884af-76d1-46e8-8ee4-332c9baf40b8
 # ╠═7edf09c5-bf7d-4668-a546-279ba3bc23d7
-# ╟─9afbcc00-97dc-4497-84a4-72a2a86cd16b
+# ╠═9afbcc00-97dc-4497-84a4-72a2a86cd16b
 # ╠═5113de94-8b41-4f86-99fd-4382142edc28
 # ╠═f06ff5ff-6890-482a-b461-bcb2d3c23fb5
 # ╠═26eb6233-2fb5-471a-bcf7-bf6e014fbc0c
 # ╠═e2595477-a045-4330-9ef9-a246be1a3112
-# ╟─95a6b54a-a692-4477-954f-849f015e6825
-# ╟─85cb8fd5-70c9-423a-8ba0-94a8632d5291
+# ╠═1e6c4633-86a2-488c-b725-2bb748e5745b
+# ╠═04c53484-0c50-4da5-a556-8fb484f6bad4
+# ╠═a2d44175-3dbb-4389-8d36-43af247b3d2f
+# ╠═95a6b54a-a692-4477-954f-849f015e6825
+# ╠═85cb8fd5-70c9-423a-8ba0-94a8632d5291
 # ╠═7d948d45-f76b-465f-be29-338d926b82a9
 # ╠═a1fbd981-f4c6-4899-9156-be5629f5130c
 # ╠═6c8d381d-994a-45b3-b59e-73d3c3f4e29d
@@ -2161,28 +2691,55 @@ version = "0.31.1+0"
 # ╠═af03769b-34d1-420a-8397-709b8f6218a3
 # ╠═ef2bb53e-c19c-490d-a116-c3cba8a84c25
 # ╠═efa8d8e0-8207-416f-8735-c82f8d48f0da
-# ╟─3be41328-baa6-40f5-b76f-1e5e8c31258c
+# ╠═3be41328-baa6-40f5-b76f-1e5e8c31258c
 # ╠═a5037ddd-09bd-4f59-b9b8-c23dba5de9b8
 # ╟─31f648a2-cdb3-4def-8f04-dbfc65787536
+# ╠═e7eb06a2-9ff1-4169-81dc-45b21c2134ae
 # ╠═953e18ab-482a-4fc0-b993-8701a42b70ea
 # ╠═2382ccbf-61c4-4c81-9c86-65b3d46ec082
 # ╠═5d0e2fa5-7a39-4671-b64f-07c0ee650eba
 # ╠═6c7072f3-5016-4cd9-ba99-a98cccb41dd2
-# ╠═eba85150-3ec9-48aa-a441-2c79204d8ab3
+# ╟─eba85150-3ec9-48aa-a441-2c79204d8ab3
 # ╠═1aa47e19-6d68-4be4-a597-4ed229e9606f
 # ╠═729d5ce7-56a4-4d20-b768-6ea49aa2ef96
 # ╠═08403fbf-edef-4212-b8bf-57547e8c8975
 # ╠═b0631780-5d84-4033-a920-cfde28008aa8
 # ╟─ed4d68ee-131a-4a44-99a3-eac9ece030c8
-# ╠═81926178-9e95-4bd6-ab5f-1c58f64db7a3
-# ╠═341343f2-e1a5-4410-a426-4949217993bc
-# ╠═880b4f59-40e5-416a-81a7-cc359d8a40a2
-# ╠═07594de8-291e-473c-98d8-397af5f3f761
-# ╠═9bd9b5d4-a83b-4b3d-8ddc-21684e6b50bd
-# ╠═88d968b3-3901-49ff-973d-e4db1006bed6
-# ╠═79b6d0be-971b-479b-bfa1-35a177a26c64
-# ╠═bdb336eb-575d-4ea9-a885-e0d4dc8baeea
-# ╠═b5ed6780-cdbf-43d5-a221-9405f4dbe202
 # ╠═ac6ee28c-72a2-4e79-8cb1-2f5a60eea8c2
+# ╠═b4474363-09d0-424c-a823-c417ed3562c5
+# ╠═c1d16c13-c81e-40e9-959c-a0205e86279f
+# ╠═ac111893-8e0b-4668-b8db-2340e1f7ddf0
+# ╠═ad1fbe7a-eeb5-4296-8cfe-eeaa0eb55863
+# ╟─ed3e6edf-f30e-4f3e-ad25-f00f821cc666
+# ╠═4a804574-30a2-44d7-8762-674e674aa9e5
+# ╠═939c997e-f1e6-43b8-8ec5-237e298aa8ad
+# ╠═1e4040f5-c26e-40ec-ae8d-6444c7f4ef28
+# ╟─199b9779-a6f6-4ed7-aa7d-246076751f56
+# ╠═b63c789f-26d1-4894-935b-7daec63915f9
+# ╠═15d6fa2a-d3d4-4848-af09-7c081dd8f4e7
+# ╠═51c2801e-7051-490a-bd68-1dceb9d7f7f9
+# ╠═f7f65fe2-f2cd-413d-8b6d-dbc5298617df
+# ╠═05700042-ca64-40d7-8ef2-76a75897fe11
+# ╠═51f461ac-be1f-4805-be42-9dde9a22edd6
+# ╠═10d68352-3351-4bc7-a6cd-edc9ca207f16
+# ╠═52d44aa6-9eae-478d-8a2d-5cd44aee05df
+# ╠═ffe5994b-5ea9-4dd9-a878-23c1b5b32371
+# ╠═0eb54fbe-f4d5-4797-9560-d89d2d9a47e1
+# ╠═75f2bc28-529e-47e1-95cf-e8a6b2f864ec
+# ╠═0c7d4fb7-623a-47bd-bf88-af88591b95d7
+# ╠═bd054871-3e62-4d8c-bc06-b5613507e5fa
+# ╠═374ba8ed-43b4-476f-9c95-1415048d7006
+# ╠═a8099841-3732-419f-be73-ff8d45340d98
+# ╠═a06fbb9a-203c-4a02-90fa-6541d4b8c29a
+# ╠═0a7d15bb-c7e0-48dd-bd0d-043dc38de52e
+# ╠═c3a2b06e-bb16-4cef-90e6-8e2828c3ddb6
+# ╠═c06231b4-cdac-4c87-a705-494fdf684580
+# ╠═02b064da-b41e-499e-ae0a-fc60dbb303d1
+# ╠═e0e2ae34-6916-4135-b774-e6e3b2152713
+# ╠═5b53a6d2-35bb-4be4-89c8-b0bd846fd44d
+# ╠═a42e9278-6913-4c47-8dcf-46452155f75c
+# ╠═5163e320-0711-42e8-89c6-90994f612c56
+# ╠═15149b75-4ce7-472c-adfa-8d4ad153ba95
+# ╠═48f62a32-a4b1-4847-b6e3-562d81ebb8b0
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
