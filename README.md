@@ -1,3 +1,5 @@
 # SNImproved2bbSpectra
 
-README file can be found in the *.pdf (with latest date) for now. 
+**This repository is a work-in-progress repository for my analysis on the improved spectral shapes analysis for SuperNEMO Experiment. The main file is the XXXX.pdf located at the root of the repository.**
+
+This file contains a `Pluto` Notebook with all the relevant information. 
