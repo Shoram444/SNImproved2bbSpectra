@@ -118,49 +118,49 @@ end
 begin
 	shPhi = histogram(
 		[phi1, phi2], 
-		normed = :true, 
-		nbins = 0:Δϕ:180, 
-		label = ["Κ = -0.88 (SM)" "Κ = -0.6639 (refined)"], 
-		xlabel = "escape angle φ [°]" ,
-		ylabel = "normalized count rate",
-		lw = 4
+		normed=:true, 
+		nbins=0:Δϕ:180, 
+		label=["Κ=-0.88 (SM)" "Κ=-0.6639 (refined)"], 
+		xlabel="escape angle φ [°]" ,
+		ylabel="normalized count rate",
+		lw=4
 	)
 
 	resPhi = scatter(
 		midpoints(0:Δϕ:180),
 		AM.get_residuals( phi1, phi2, 0:Δϕ:180, true ),
-		yerr = AM.get_residuals_errors( phi1, phi2, 0:Δϕ:180, true ),
-		mc = :black,
-		label = "",
-		ylabel = "refined/SM",
-		xlabel = "escape angle φ [°]",
-		ms =1.5,
-		ylims = (0.8, 1.2)
+		yerr=AM.get_residuals_errors( phi1, phi2, 0:Δϕ:180, true ),
+		mc=:black,
+		label="",
+		ylabel="refined/SM",
+		xlabel="escape angle φ [°]",
+		ms=1.5,
+		ylims=(0.8, 1.2)
 	)
 
 	shEne = histogram(
 		[singleElectronEnergies1, singleElectronEnergies2], 
-		normed = :true, 
-		nbins = 0:ΔE:3000, 
-		label = ["SM" "ξ31 = 0.37 (refined)"], 
-		xlabel = L"\textrm{single ~electron ~energy ~T_e ~[keV]}" ,
-		ylabel = "normalized count rate",
-		legend = :best,
-		lw = 4
+		normed=:true, 
+		nbins=0:ΔE:3000, 
+		label=["SM" "ξ31=0.37 (refined)"], 
+		xlabel=L"\textrm{single ~electron ~energy ~T_e ~[keV]}" ,
+		ylabel="normalized count rate",
+		legend=:best,
+		lw=4
 	)
 
 	resEne = scatter(
 		midpoints(0:ΔE:3000),
 		AM.get_residuals( 
 			singleElectronEnergies1, singleElectronEnergies2, 0:ΔE:3000, true ),
-		yerr = AM.get_residuals_errors( 
+		yerr=AM.get_residuals_errors( 
 			singleElectronEnergies1, singleElectronEnergies2, 0:ΔE:3000, true ),
-		mc = :black,
-		label = "",
-		ylabel = "refined/SM",
-		xlabel = L"\textrm{single ~electron ~energy ~T_e ~[keV]}",
-		ylims = (0.8, 1.2),
-		ms = 1.5
+		mc=:black,
+		label="",
+		ylabel="refined/SM",
+		xlabel=L"\textrm{single ~electron ~energy ~T_e ~[keV]}",
+		ylims=(0.8, 1.2),
+		ms=1.5
 	)
 
 	plot(
@@ -231,7 +231,7 @@ We first look at the behaviour of `M(r)`. Notice that for ``r \rightarrow 1.0, ~
 """
 
 # ╔═╡ 8b627eb8-8d8b-431a-9768-0764045db3c8
-plot(0.9:0.01:0.99, AM.Mmin.(0.9:0.01:0.99, 1e5, 1e5), 
+plot(0.8:0.001:0.999, AM.Mmin.(0.8:0.001:0.999, 1e5, 1e5), 
 	xlabel = "r", 
 	ylabel = "M(r)",
 	label = "",
@@ -239,7 +239,7 @@ plot(0.9:0.01:0.99, AM.Mmin.(0.9:0.01:0.99, 1e5, 1e5),
 	size = (800,400),
 	yscale= :log10,
 	yticks= [10^3, 10^4, 10^5, 10^6, 10^7, 10^8],
-	xticks= 0.9:0.01:1.0,
+	xticks= 0.8:0.02:1.0,
 	thickness_scaling = 1.2
 )
 
@@ -460,7 +460,7 @@ md"""
 # ╔═╡ f4702938-0f46-4448-8892-fd0998998a5a
 begin
 	Chi2Ene = AM.Chi2(
-		singleElectronEnergies1, singleElectronEnergies2, 450, 2100, 150, sampleSizes,  CL)
+		singleElectronEnergies1, singleElectronEnergies2, 300, 2400, 150, sampleSizes,  CL)
 	Chi2Phi = AM.Chi2(phi1, phi2, 0, 180, 15, sampleSizes,  CL)
 end
 
@@ -521,43 +521,84 @@ We can also look at the other tests:
 3. ϕ distribution using Chi2 test
 3. E distribution using Chi2 test
 
-Right away we can see that KS test is more strict when it comes to rejecting H0. 
+Right away we can see that KS test is more strict when it comes to rejecting H0. Furthermore, it seems that the angular distribution is the more promising candidate for distinguishing the spectra.
 """
 
 # ╔═╡ 51f461ac-be1f-4805-be42-9dde9a22edd6
 begin 
-	bp1 =boxplot(KSPhi.pVals, label = "", 
-		xticks=:none,# 
-		# xticks=(1:length(sampleSizes), sampleSizes), 
-		xrotation = 65, c=1, fa = 0.5, ylabel ="p-value",
-		top_margin = 0Plots.px,
-		bottom_margin = 0Plots.px,
-		left_margin = 0Plots.px,
-		right_margin = 0Plots.px,
-		# xguide_position = :top
+	bp1 = boxplot(
+		KSPhi.pVals, 
+		label="", 
+		xticks=:none, 
+		xrotation=65, 
+		c=1, 
+		fa=0.5, 
+		ylabel="p-value",
+		top_margin=0Plots.px,
+		bottom_margin=0Plots.px,
+		left_margin=0Plots.px,
+		right_margin=0Plots.px,
+		ylims=(0,1)
 	)
 	annotate!([(18,0.8,("φ: KS", 20))])
 
-	bp2 =boxplot(KSEne.pVals, label = "", 
+	bp2 = boxplot(
+		KSEne.pVals, 
+		label="", 
 		xticks=:none, #(1:length(sampleSizes), sampleSizes), 
-		xrotation = 65, c=2, fa = 0.5,  yticks=:none,
-		top_margin = 0Plots.px,
-		bottom_margin = 0Plots.px,
-		left_margin = 0Plots.px,
-		right_margin = 0Plots.px,)
+		xrotation=65, 
+		c=2, 
+		fa=0.5,  
+		yticks=:none,
+		top_margin=0Plots.px,
+		bottom_margin=0Plots.px,
+		left_margin=0Plots.px,
+		right_margin=0Plots.px,
+		ylims=(0,1)
+	)
 	annotate!([(18,0.8,("E: KS", 20))])
 
-	bp3 =boxplot(filter!.(x -> x .>=0, Chi2Phi.pVals), label = "", xticks=(1:length(sampleSizes), sampleSizes), xrotation = 65, c=3, fa = 0.5, xlabel = "sample size", ylabel ="p-value", 
-	top_margin = 0Plots.px,left_margin = 0Plots.px,right_margin = 0Plots.px,)
+	bp3 = boxplot(
+		filter!.(x -> x .>=0, Chi2Phi.pVals), 
+		label="", 
+		xticks=(1:length(sampleSizes), sampleSizes), 
+		xrotation=65, 
+		c=3, 
+		fa=0.5, 
+		xlabel="sample size", 
+		ylabel ="p-value", 
+		top_margin=0Plots.px,
+		left_margin=0Plots.px,
+		right_margin=0Plots.px,
+		ylims=(0,1)
+	)
 	annotate!([(18,0.8,(L"\mathrm{φ:~ \chi^2}", 20))])
 	
 
-	bp4 =boxplot(filter!.(x -> x .>=0, Chi2Ene.pVals), label = "", xticks=(1:length(sampleSizes), sampleSizes), xrotation = 65, c=4, fa = 0.5, xlabel = "sample size", 
-	top_margin = 0Plots.px,left_margin = 0Plots.px,right_margin = 0Plots.px, yticks=:false)
+	bp4 = boxplot(
+		filter!.(x -> x .>=0, Chi2Ene.pVals), 
+		label="", 
+		xticks=(1:length(sampleSizes), sampleSizes), 
+		xrotation=65, 
+		c=4, 
+		fa=0.5, 
+		xlabel="sample size", 
+		top_margin=0Plots.px,
+		left_margin=0Plots.px,
+		right_margin=0Plots.px, 
+		yticks=:false,
+		ylims=(0,1)
+	)
 	annotate!([(18,0.8,(L"\mathrm{E:~ \chi^2}", 20))])
 	
 
-	bxpAll = plot(bp1, bp2, bp3, bp4, size =(1200, 1100),thickness_scaling=1.3, grid=:false, minorgrid=:false)
+	bxpAll = plot(
+		bp1, bp2, bp3, bp4, 
+		size=(1200, 1100),
+		thickness_scaling=1.3, 
+		grid=:false, 
+		minorgrid=:false
+	)
 
 end
 
@@ -642,8 +683,6 @@ for (cl, nsig) in zip([0.68, 0.90, 0.95], [1, 1.645, 1.96])
 	minChi2Ene = AM.get_best_sample_size(Chi2Ene, sampleSizes, cl, 100,3)
 	minBBBPhi = AM.BBB(phi1, phi2, 0, 180, Δϕ, nsig).minEvents
 	minBBBEne = AM.BBB(singleElectronEnergies1, singleElectronEnergies2, 0, 3000, ΔE, nsig).minEvents
-
-	@show minKSPhi, minKSEne, minChi2Phi, minChi2Ene, minBBBPhi, minBBBEne
 end
 
 # ╔═╡ 15149b75-4ce7-472c-adfa-8d4ad153ba95
@@ -651,8 +690,8 @@ md"""
 CL\method | KSphi |KSEne | Χ²Phi | Χ²Ene | BBBPhi | BBB Ene
 ----------|-------|------|-------|-------|--------|--------
 68%       |70k    |450k  |60k    |350k   |11k     |60k
-90%       |150k   |>800k |60k    |450k   |30k     |160k
-95%       |150k   |>800k |70k    |450k   |45k     |230k
+90%       |150k   |750k  |60k    |350k   |30k     |160k
+95%       |200k   |750k  |200k   |500k   |45k     |230k
 
 """
 
@@ -2210,18 +2249,18 @@ version = "0.31.1+0"
 # ╔═╡ Cell order:
 # ╠═411eeb6b-6902-4cd9-8bda-8ebae1de81b1
 # ╠═5565017c-534f-46a5-b86b-37753c42da24
-# ╟─afeccb00-7abf-11ed-194a-558eaaa68040
+# ╠═afeccb00-7abf-11ed-194a-558eaaa68040
 # ╟─716b3e40-73e6-4d80-8126-8ec10d0d64fb
-# ╟─6e1c4c5b-08a3-44fa-bd34-770fd38c03a3
+# ╠═6e1c4c5b-08a3-44fa-bd34-770fd38c03a3
 # ╠═a7e6341c-6f8b-42a6-b440-368fea258855
 # ╠═6c4cc9cc-3344-4ff0-bed3-df7ba1d00bc7
-# ╟─da3a265b-6230-4414-b4c4-01abc5e9b3e8
+# ╠═da3a265b-6230-4414-b4c4-01abc5e9b3e8
 # ╟─95a6b54a-a692-4477-954f-849f015e6825
 # ╟─876fd917-f94a-4404-b274-f376e4b41a44
 # ╟─85cb8fd5-70c9-423a-8ba0-94a8632d5291
 # ╟─59d2eae1-3873-41be-90eb-8d989c27754d
 # ╟─f3af938f-7e1d-4d7b-acda-dbf4682d5607
-# ╟─8b627eb8-8d8b-431a-9768-0764045db3c8
+# ╠═8b627eb8-8d8b-431a-9768-0764045db3c8
 # ╠═6c8d381d-994a-45b3-b59e-73d3c3f4e29d
 # ╟─f1f65c2b-480e-463b-aa3d-ba551a097843
 # ╟─af03769b-34d1-420a-8397-709b8f6218a3
@@ -2243,13 +2282,13 @@ version = "0.31.1+0"
 # ╟─51c2801e-7051-490a-bd68-1dceb9d7f7f9
 # ╟─f7f65fe2-f2cd-413d-8b6d-dbc5298617df
 # ╟─05700042-ca64-40d7-8ef2-76a75897fe11
-# ╟─51f461ac-be1f-4805-be42-9dde9a22edd6
+# ╠═51f461ac-be1f-4805-be42-9dde9a22edd6
 # ╟─75f2bc28-529e-47e1-95cf-e8a6b2f864ec
 # ╠═0c7d4fb7-623a-47bd-bf88-af88591b95d7
 # ╠═0a7d15bb-c7e0-48dd-bd0d-043dc38de52e
 # ╟─07f3f0b1-6d65-483d-bc0a-e59a03a4e55f
 # ╟─5163e320-0711-42e8-89c6-90994f612c56
 # ╠═c6c6a82c-2487-42bc-84e9-155346a41028
-# ╟─15149b75-4ce7-472c-adfa-8d4ad153ba95
+# ╠═15149b75-4ce7-472c-adfa-8d4ad153ba95
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

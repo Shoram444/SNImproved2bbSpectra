@@ -96,19 +96,25 @@ function get_residuals( vector1, vector2, binrange, normed = true )
 end
 
 function get_residuals_errors( vector1, vector2, binrange, normed = true )
-	if (normed)
-		bincounts1 = StatsBase.fit(Histogram{Float64}, vector1, binrange) |> normalize
-		bincounts2 = StatsBase.fit(Histogram{Float64}, vector2, binrange) |> normalize
-	else
-		bincounts1 = StatsBase.fit(Histogram{Float64}, vector1, binrange)
-		bincounts2 = StatsBase.fit(Histogram{Float64}, vector2, binrange)
-	end
-	bincounts1.weights
-	bincounts2.weights
+	hist1 = StatsBase.fit(Histogram{Float64}, vector1, binrange) 
+	hist2 = StatsBase.fit(Histogram{Float64}, vector2, binrange) 
 
-	r = bincounts2.weights ./ bincounts1.weights
+	bincounts1 = hist1.weights
+	bincounts2 = hist2.weights
 	
-	return r .* sqrt.( (bincounts1.weights) .^2 .+ (bincounts2.weights) .^2 )
+	if (normed)
+		normedHist1 = normalize(hist1)
+		normedHist2 = normalize(hist2)
+		
+		r = normedHist1.weights ./ normedHist2.weights
+		res = @. r*sqrt( 1/bincounts1 + 1/bincounts2 )
+	else
+		r = bincounts1/bincounts2
+		res = @. r*sqrt( 
+			bincounts1^2/length(vector1)^2 + bincounts2^2/length(vector2)^2 
+		) 
+	end
+	return res
 end
 
 function prop_error(npassed, ntot, percent = false)
