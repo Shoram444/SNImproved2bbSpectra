@@ -1,14 +1,14 @@
-mutable struct BBB{T}
+mutable struct BBB{T<:Real}
 	vector1::Vector{T}
 	vector2::Vector{T}
-	xMin::Real # minimum value of the array (i.e. for angles it would be 0 degrees)
-	xMax::Real # maximum value of the array (i.e. for angles it would be 180 degrees)
-	stepSize::Real
-	nSigma::Real
-	minEvents::Real
-	minROI::Tuple{<:Real,<:Real}
+	xMin::T # minimum value of the array (i.e. for angles it would be 0 degrees)
+	xMax::T # maximum value of the array (i.e. for angles it would be 180 degrees)
+	stepSize::T
+	nSigma::T
+	minEvents::T
+	minROI::Tuple{T,T}
 
-	function BBB(vector1::Vector{T}, vector2::Vector{T}, xMin::Real, xMax::Real, stepSize::Real, nSigma::Real) where T
+	function BBB(vector1::Vector{T}, vector2::Vector{T}, xMin::T, xMax::T, stepSize::T, nSigma::T) where T
 		if( (xMax-xMin)/stepSize%1 != 0.0 )  						# check the boundaries of the histogram
 			error("Range must be integer divisible by stepsize! ")
 		end
@@ -17,11 +17,11 @@ mutable struct BBB{T}
 		replace!( matStatsMr, Inf => NaN  ) 
 
 
-		minEvents::Real 			 = round(get_min_value(matStatsMr), digits = 2)                         # find minimum value
+		minEvents::T 			 = round(get_min_value(matStatsMr), digits = 2)                         # find minimum value
 		minROIidx::CartesianIndex{2} = get_min_idx(matStatsMr)                                              # find where min value is at
-		minROI::Tuple{<:Real,<:Real} = cartesianIdx_to_range(minROIidx, stepSize)                           # convert from index to cartesian coordinates
+		minROI::Tuple{<:T,<:T} = cartesianIdx_to_range(minROIidx, stepSize)                           # convert from index to cartesian coordinates
 
-		new{T}(vector1::Vector{T}, vector2::Vector{T}, xMin::Real, xMax::Real, stepSize::Real, nSigma::Real, minEvents::Real, minROI::Tuple{<:Real,<:Real}) 
+		new{T}(vector1::Vector{T}, vector2::Vector{T}, xMin::T, xMax::T, stepSize::T, nSigma::T, minEvents::T, minROI::Tuple{<:T,<:T}) 
 	end
 
 end
@@ -141,7 +141,7 @@ function get_r_map(h1::Hist1D, h2::Hist1D, xMin::Real, xMax::Real, stepSize::Rea
 
     for minROI in xMin:stepSize:xMax-stepSize        # iterating over the range xMin, xMax
         for maxROI in minROI+stepSize:stepSize:xMax
-            r = AM.get_r(h1, h2, minROI, maxROI, stepSize)
+            r = get_r(h1, h2, minROI, maxROI, stepSize)
     
             matRatios[Int(maxROI/stepSize), Int(minROI/stepSize)+1] = r
         end
@@ -179,8 +179,8 @@ function get_r_max_map(vec1::Vector{<:Real}, vec2::Vector{<:Real}, xMin::Real, x
 
     for minROI in xMin:stepSize:xMax-stepSize        # iterating over the range xMin, xMax
         for maxROI in minROI+stepSize:stepSize:xMax
-            rmax =  AM.get_r_max(h1, h2, minROI, maxROI, stepSize) <= 1.0 ? 
-			        AM.get_r_max(h1, h2, minROI, maxROI, stepSize) : NaN   
+            rmax =  get_r_max(h1, h2, minROI, maxROI, stepSize) <= 1.0 ? 
+			        get_r_max(h1, h2, minROI, maxROI, stepSize) : NaN   
     
             matRatios[Int(maxROI/stepSize), Int(minROI/stepSize)+1] = rmax
         end
@@ -201,7 +201,7 @@ function get_r_min_map(vec1::Vector{<:Real}, vec2::Vector{<:Real}, xMin::Real, x
 
     for minROI in xMin:stepSize:xMax-stepSize        # iterating over the range xMin, xMax
         for maxROI in minROI+stepSize:stepSize:xMax
-            rmin =  AM.get_r_min(h1, h2, minROI, maxROI, stepSize) 
+            rmin =  get_r_min(h1, h2, minROI, maxROI, stepSize) 
     
             matRatios[Int(maxROI/stepSize), Int(minROI/stepSize)+1] = rmin
         end
@@ -214,7 +214,29 @@ function get_r_min_map(bbb::BBB)
     get_r_min_map(bbb.vector1, bbb.vector2, bbb.xMin, bbb.xMax, bbb.stepSize)
 end
 
-function get_min_stats_map(vec1::Vector{<:Real}, vec2::Vector{<:Real}, xMin::Real, xMax::Real, stepSize::Real, nSigma)
+function get_delta_r_map(vec1::Vector{<:Real}, vec2::Vector{<:Real}, xMin::Real, xMax::Real, stepSize::Real)
+    h1 = Hist1D( vec1, xMin:stepSize:xMax )
+    h2 = Hist1D( vec2, xMin:stepSize:xMax )
+
+    matRatios = zeros(Int(xMax/stepSize),Int(xMax/stepSize))
+
+    for minROI in xMin:stepSize:xMax-stepSize        # iterating over the range xMin, xMax
+        for maxROI in minROI+stepSize:stepSize:xMax
+            rmin = get_delta_r(h1, h2, minROI, maxROI, stepSize) 
+    
+            matRatios[Int(maxROI/stepSize), Int(minROI/stepSize)+1] = rmin
+        end
+    end
+
+    return matRatios
+end
+
+function get_delta_r_map(bbb::BBB)
+	get_delta_r_map(bbb.vector1, bbb.vector2, bbb.xMin, bbb.xMax, bbb.stepSize)
+end
+
+
+function get_min_stats_map(vec1::Vector{<:Real}, vec2::Vector{<:Real}, xMin::Real, xMax::Real, stepSize::Real)
     h1 = Hist1D( vec1, xMin:stepSize:xMax )
     h2 = Hist1D( vec2, xMin:stepSize:xMax )
 
@@ -231,6 +253,7 @@ function get_min_stats_map(vec1::Vector{<:Real}, vec2::Vector{<:Real}, xMin::Rea
 
     return matRatios
 end
+
 function get_min_stats_map(bbb::BBB)
     get_min_stats_map(bbb.vector1, bbb.vector2, bbb.xMin, bbb.xMax, bbb.stepSize, bbb.nSigma)
 end

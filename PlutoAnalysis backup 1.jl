@@ -168,10 +168,10 @@ begin
 		shEne, 
 		resPhi,
 		resEne,
+		layout = grid(2,2), 
 		plot_title = "reconstructed distributions",
-		size = (2000, 1000),
-		thickness_scaling = 1.4,
-		layout = @layout [a b ; c{0.3h} d]
+		size = (1400, 800),
+		thickness_scaling = 1.4
 	)
 end
 
@@ -245,8 +245,8 @@ plot(0.8:0.001:0.999, AM.Mmin.(0.8:0.001:0.999, 1e5, 1e5),
 
 # ╔═╡ 6c8d381d-994a-45b3-b59e-73d3c3f4e29d
 begin
-	BBBPhi = AM.BBB(phi1, phi2, 0., 180., float(Δϕ), 1.)
-	BBBEne = AM.BBB(singleElectronEnergies1, singleElectronEnergies2, 0., 3000., float(ΔE), 1.)
+	BBBPhi = AM.BBB(phi1, phi2, 0, 180, Δϕ, 1)
+	BBBEne = AM.BBB(singleElectronEnergies1, singleElectronEnergies2, 0, 3000, ΔE, 1)
 end
 
 # ╔═╡ f1f65c2b-480e-463b-aa3d-ba551a097843
@@ -2154,11 +2154,21 @@ version = "0.31.1+0"
 # ╟─53484f4e-129e-4aa1-8e24-959eaa9cdb3d
 # ╠═3d268ae3-f1db-489d-887d-de555417c467
 # ╟─e7e5a693-efe1-4a2d-8aa1-4c24ee377168
+# ╠═f4702938-0f46-4448-8892-fd0998998a5a
+# ╠═581e7415-2483-484c-825d-f321400bbb4c
+# ╠═15d6fa2a-d3d4-4848-af09-7c081dd8f4e7
+# ╟─9569f6b7-7773-4668-b19a-341ceb78e5c2
 # ╟─852b33c3-99fb-4d3f-b22c-737a301a9cd8
 # ╟─51c2801e-7051-490a-bd68-1dceb9d7f7f9
+# ╟─f7f65fe2-f2cd-413d-8b6d-dbc5298617df
 # ╟─05700042-ca64-40d7-8ef2-76a75897fe11
+# ╠═51f461ac-be1f-4805-be42-9dde9a22edd6
 # ╟─75f2bc28-529e-47e1-95cf-e8a6b2f864ec
+# ╠═0c7d4fb7-623a-47bd-bf88-af88591b95d7
+# ╠═0a7d15bb-c7e0-48dd-bd0d-043dc38de52e
+# ╟─07f3f0b1-6d65-483d-bc0a-e59a03a4e55f
 # ╟─5163e320-0711-42e8-89c6-90994f612c56
+# ╠═c6c6a82c-2487-42bc-84e9-155346a41028
 # ╠═15149b75-4ce7-472c-adfa-8d4ad153ba95
 # ╠═9a2dbe13-66c9-4fa5-8404-2872601bafef
 # ╠═b675e1b6-320c-4db5-b527-068e6e571c84

@@ -27,6 +27,7 @@ export  get_r, 					# returns the ratio of two bin heights (normalized)
 		get_r_map,				# returns a map of r ratios 
 		get_r_max_map,			# returns a map of rmax ratios
 		get_r_min_map,			# returns a map of rmin ratios
+		get_delta_r_map,        # returns a map of delta r ratios
 		get_min_stats_map 		# returns a map of min stats needed
 
 export BBB 						# main Module object
