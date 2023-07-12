@@ -7,7 +7,14 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local iv = try
+            Base.loaded_modules[Base.PkgId(
+                Base.UUID("6e696c72-6542-2067-7265-42206c756150"),
+                "AbstractPlutoDingetjes",
+            )].Bonds.initial_value
+        catch
+            b -> missing
+        end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
@@ -15,12 +22,12 @@ macro bind(def, element)
 end
 
 # ╔═╡ 1f7b369e-addf-11ed-3732-af564dbcb6f7
-begin 
-	using PlutoUI, Plots, DataFramesMeta, DataFrames, CSV, DelimitedFiles
+begin
+    using PlutoUI, Plots, DataFramesMeta, DataFrames, CSV, DelimitedFiles
 
-	push!(LOAD_PATH, "/home/shoram/.julia/dev/MPRebinSpectra/") # add package to path so it can be used by using MPRebinSpectra
+    push!(LOAD_PATH, "/home/shoram/.julia/dev/MPRebinSpectra/") # add package to path so it can be used by using MPRebinSpectra
 
-	using MPRebinSpectra
+    using MPRebinSpectra
 end
 
 # ╔═╡ 621dfae8-fa26-4c81-9a18-0f707fa9ca28
@@ -41,52 +48,63 @@ Where $H_i$ and $G_i$ are the integrals provided in tables by RD. The $\xi_i$ pa
 """
 
 # ╔═╡ 1fca8aca-b516-4525-a3bd-a462072ccc76
-begin 
-	gr() 
-	default(fmt = :jpg)
-	theme(
-	    :dao;
-	    size           = (800, 800),
-	    legend         = :topleft,
-	    guidefontsize  = 16,
-	    tickfontsize   = 12,
-	    titlefontsize  = 16,
-	    legendfontsize = 12,
-	    left_margin    = 4Plots.mm,
-	    right_margin   = 8Plots.mm,
-	    top_margin     = 4Plots.mm,
-	    bottom_margin  = 6Plots.mm,
-	    dpi            = 200,
-	    :colorbar_titlefontsize => 20,
-	    widen = :false
-	);
+begin
+    gr()
+    default(fmt = :jpg)
+    theme(
+        :dao;
+        size = (800, 800),
+        legend = :topleft,
+        guidefontsize = 16,
+        tickfontsize = 12,
+        titlefontsize = 16,
+        legendfontsize = 12,
+        left_margin = 4Plots.mm,
+        right_margin = 8Plots.mm,
+        top_margin = 4Plots.mm,
+        bottom_margin = 6Plots.mm,
+        dpi = 200,
+        :colorbar_titlefontsize => 20,
+        widen = :false,
+    )
 
 end
 
 # ╔═╡ 1eabe1b2-c5de-4a53-8552-44c9f0bf5363
 # Relevant constants from the two publications
 begin
-	const G0 = 0.334863e-46 # [MeV]
-	const G2 = 0.148350E-46 # [MeV]
-	const G22 = 0.188606E-47 # [MeV]
-	const G4 = 0.824467E-47 # [MeV]
-	
-	const H0 = 0.226022E-46 # [MeV]
-	const H2 = 0.929409E-47 # [MeV]
-	const H22 = 0.108907E-47 # [MeV]
-	const H4 = 0.484671E-47 # [MeV]
+    const G0 = 0.334863e-46 # [MeV]
+    const G2 = 0.148350E-46 # [MeV]
+    const G22 = 0.188606E-47 # [MeV]
+    const G4 = 0.824467E-47 # [MeV]
 
-	const ξ51 = 0.1397 # for SSD
+    const H0 = 0.226022E-46 # [MeV]
+    const H2 = 0.929409E-47 # [MeV]
+    const H22 = 0.108907E-47 # [MeV]
+    const H4 = 0.484671E-47 # [MeV]
+
+    const ξ51 = 0.1397 # for SSD
 end
-	
+
 
 # ╔═╡ 8b241d34-37c5-4f97-9575-fd225fd5b703
 # equation 26 in Ovidius paper
-function get_kappa(ξ31, ξ51 = 0.1397, G0 = 0.334863e-46, G2 = 0.148350E-46, G22 = 0.188606E-47, G4 = 0.824467E-47, H0 = 0.226022E-46, H2 = 0.929409E-47, H22 = 0.108907E-47, H4 = 0.484671E-47)
-	numerator = H0 + ξ31*H2 + 5/9*ξ31^2*H22 + (2/9*ξ31^2 + ξ51)*H4
-	denumerator = G0 + ξ31*G2 + 1/3*ξ31^2*G22 + (1/3*ξ31^2 + ξ51)*G4
+function get_kappa(
+    ξ31,
+    ξ51 = 0.1397,
+    G0 = 0.334863e-46,
+    G2 = 0.148350E-46,
+    G22 = 0.188606E-47,
+    G4 = 0.824467E-47,
+    H0 = 0.226022E-46,
+    H2 = 0.929409E-47,
+    H22 = 0.108907E-47,
+    H4 = 0.484671E-47,
+)
+    numerator = H0 + ξ31 * H2 + 5 / 9 * ξ31^2 * H22 + (2 / 9 * ξ31^2 + ξ51) * H4
+    denumerator = G0 + ξ31 * G2 + 1 / 3 * ξ31^2 * G22 + (1 / 3 * ξ31^2 + ξ51) * G4
 
-	return -1* numerator / denumerator
+    return -1 * numerator / denumerator
 end
 
 # ╔═╡ cddb1cb9-2d10-4950-8d15-9693a6ff28eb
@@ -102,7 +120,7 @@ xi31
 K = get_kappa(xi31)
 
 # ╔═╡ 613726b7-bb1c-4890-a27b-b3211f4c249b
-plot( -1.:0.01:1., get_kappa.(-1.:0.01:1.), ylabel = "kappa", xlabel ="xi" )
+plot(-1.0:0.01:1.0, get_kappa.(-1.0:0.01:1.0), ylabel = "kappa", xlabel = "xi")
 
 # ╔═╡ e6e39eba-5872-44e1-9075-5500eb43461b
 md"""
@@ -110,22 +128,22 @@ In order for the spectra to be sampled in `MPGenbb.jl` the individual tables of 
 """
 
 # ╔═╡ 3969ee52-7f7f-49dd-93d9-2edb6796b253
-begin 
-	G0file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG0.dat"
-	G2file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG2.dat"
-	G22file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG22.dat"
-	G4file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG4.dat"
+begin
+    G0file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG0.dat"
+    G2file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG2.dat"
+    G22file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG22.dat"
+    G4file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spectrumG4.dat"
 end
 
 # ╔═╡ 68b1ea21-aabf-4bfa-8f4c-8b0ce502aae0
 function add_spectra(ξ31, ξ51, G0file, G2file, G22file, G4file)
-	dG0 = readdlm(G0file, Float64)[:,3]
-	dG2 = readdlm(G2file, Float64)[:,3]
-	dG22 = readdlm(G22file, Float64)[:,3]
-	dG4 = readdlm(G4file, Float64)[:,3]
+    dG0 = readdlm(G0file, Float64)[:, 3]
+    dG2 = readdlm(G2file, Float64)[:, 3]
+    dG22 = readdlm(G22file, Float64)[:, 3]
+    dG4 = readdlm(G4file, Float64)[:, 3]
 
-	dG = @. dG0 + ξ31*dG2 + 1/3*(ξ31)^2*dG22 + (1/3*(ξ31)^2 + ξ51)*dG4
-	return dG
+    dG = @. dG0 + ξ31 * dG2 + 1 / 3 * (ξ31)^2 * dG22 + (1 / 3 * (ξ31)^2 + ξ51) * dG4
+    return dG
 end
 
 # ╔═╡ 90cd9654-c72f-4683-b271-09945a004b84
@@ -138,9 +156,9 @@ Kappa = round(get_kappa(ξ31), digits = 4)
 dG = add_spectra(ξ31, ξ51, G0file, G2file, G22file, G4file);
 
 # ╔═╡ 516b858c-310c-455f-a1da-1a8b09ee0508
-begin 
-	E1 = readdlm(G0file, Float64)[:,1]
-	E2 = readdlm(G0file, Float64)[:,2]
+begin
+    E1 = readdlm(G0file, Float64)[:, 1]
+    E2 = readdlm(G0file, Float64)[:, 2]
 end;
 
 # ╔═╡ 4756bd42-67be-4d12-bea7-c6b1b6d89832
@@ -151,7 +169,7 @@ saveFileName = "xi51_$ξ51-xi31_$ξ31-K2v_$Kappa-G0_G2_G22_G4.csv";
 
 # ╔═╡ b71730e6-c555-4cb1-92d8-30c7a742f216
 open(joinpath(dataDir, saveFileName), "w") do io
-   writedlm(io, [E1 E2 dG], "    ")
+    writedlm(io, [E1 E2 dG], "    ")
 end
 
 # ╔═╡ 066170fd-0060-41b3-a0f7-9a13cfe3414a
@@ -166,13 +184,18 @@ Now we can use `MPRebinSpectra.jl` to rebin the generated file into format usabl
 """
 
 # ╔═╡ 8c910ab6-6554-4ba6-af79-0027c126cbd3
-df_raw = CSV.File(joinpath(dataDir, saveFileName), delim = "    ", header = ["E1", "E2", "dGdE"]) |> DataFrame
+df_raw =
+    CSV.File(
+        joinpath(dataDir, saveFileName),
+        delim = "    ",
+        header = ["E1", "E2", "dGdE"],
+    ) |> DataFrame
 
 # ╔═╡ 8ef00fec-8be4-4bce-ac20-57ec485c05fc
 df = rebin2D(df_raw, 0.001) |> normalize2D! |> get_cdf!
 
 # ╔═╡ 2f88516f-6eea-45c7-855b-bd13e8182cd4
-CSV.write(joinpath(dataDir,"rebinned", saveFileName), df)
+CSV.write(joinpath(dataDir, "rebinned", saveFileName), df)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """

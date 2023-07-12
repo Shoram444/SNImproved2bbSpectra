@@ -7,7 +7,14 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local iv = try
+            Base.loaded_modules[Base.PkgId(
+                Base.UUID("6e696c72-6542-2067-7265-42206c756150"),
+                "AbstractPlutoDingetjes",
+            )].Bonds.initial_value
+        catch
+            b -> missing
+        end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
@@ -30,25 +37,25 @@ using CSV
 
 
 # ╔═╡ f501d3cf-09bf-4506-befe-1eea362cd1dd
-begin 
-	gr() 
-	default(fmt = :jpg)
-	theme(
-	    :dao;
-	    size           = (800, 800),
-	    legend         = :topleft,
-	    guidefontsize  = 16,
-	    tickfontsize   = 12,
-	    titlefontsize  = 16,
-	    legendfontsize = 12,
-	    left_margin    = 4Plots.mm,
-	    right_margin   = 8Plots.mm,
-	    top_margin     = 4Plots.mm,
-	    bottom_margin  = 6Plots.mm,
-	    dpi            = 200,
-	    :colorbar_titlefontsize => 20,
-	    widen = :false
-	);
+begin
+    gr()
+    default(fmt = :jpg)
+    theme(
+        :dao;
+        size = (800, 800),
+        legend = :topleft,
+        guidefontsize = 16,
+        tickfontsize = 12,
+        titlefontsize = 16,
+        legendfontsize = 12,
+        left_margin = 4Plots.mm,
+        right_margin = 8Plots.mm,
+        top_margin = 4Plots.mm,
+        bottom_margin = 6Plots.mm,
+        dpi = 200,
+        :colorbar_titlefontsize => 20,
+        widen = :false,
+    )
 
 end
 
@@ -69,28 +76,39 @@ Where $H_i$ and $G_i$ are the integrals provided in tables by RD. The $\xi_i$ pa
 
 # ╔═╡ 2ae1ccb9-9047-43f6-add6-4adce49e28d1
 begin
-	const G0 = 0.334863e-46 # [MeV]
-	const G2 = 0.148350E-46 # [MeV]
-	const G22 = 0.188606E-47 # [MeV]
-	const G4 = 0.824467E-47 # [MeV]
-	
-	const H0 = 0.226022E-46 # [MeV]
-	const H2 = 0.929409E-47 # [MeV]
-	const H22 = 0.108907E-47 # [MeV]
-	const H4 = 0.484671E-47 # [MeV]
+    const G0 = 0.334863e-46 # [MeV]
+    const G2 = 0.148350E-46 # [MeV]
+    const G22 = 0.188606E-47 # [MeV]
+    const G4 = 0.824467E-47 # [MeV]
 
-	const ξ51 = 0.1397 # for SSD
+    const H0 = 0.226022E-46 # [MeV]
+    const H2 = 0.929409E-47 # [MeV]
+    const H22 = 0.108907E-47 # [MeV]
+    const H4 = 0.484671E-47 # [MeV]
+
+    const ξ51 = 0.1397 # for SSD
 end
-	
+
 
 # ╔═╡ f0f38ea7-337e-45d1-a34c-d0ad898516fc
-function get_kappa(ξ31, ξ51 = 0.1397, G0 = 0.334863e-46, G2 = 0.148350E-46, G22 = 0.188606E-47, G4 = 0.824467E-47, H0 = 0.226022E-46, H2 = 0.929409E-47, H22 = 0.108907E-47, H4 = 0.484671E-47)
-	numerator = H0 + ξ31*H2 + 5/9*ξ31^2*H22 + (2/9*ξ31^2 + ξ51)*H4
-	denumerator = G0 + ξ31*G2 + 1/3*ξ31^2*G22 + (1/3*ξ31^2 + ξ51)*G4
+function get_kappa(
+    ξ31,
+    ξ51 = 0.1397,
+    G0 = 0.334863e-46,
+    G2 = 0.148350E-46,
+    G22 = 0.188606E-47,
+    G4 = 0.824467E-47,
+    H0 = 0.226022E-46,
+    H2 = 0.929409E-47,
+    H22 = 0.108907E-47,
+    H4 = 0.484671E-47,
+)
+    numerator = H0 + ξ31 * H2 + 5 / 9 * ξ31^2 * H22 + (2 / 9 * ξ31^2 + ξ51) * H4
+    denumerator = G0 + ξ31 * G2 + 1 / 3 * ξ31^2 * G22 + (1 / 3 * ξ31^2 + ξ51) * G4
 
-	return -1* numerator / denumerator
+    return -1 * numerator / denumerator
 end
-	
+
 
 # ╔═╡ 079a63b1-6c98-412f-8ee5-02a478478b3d
 @bind xi31 Slider(-1.0:0.001:1.0)
@@ -102,13 +120,13 @@ xi31
 K = get_kappa(xi31)
 
 # ╔═╡ c522d4df-456b-416e-8c3d-6e59d14fcbf6
-plot( 
-	-1:0.001:1.0, 
-	get_kappa.(-1:0.001:1.0), 
-	xlabel = "ξ31", 
-	ylabel = "K2ν", 
-	title = "fixed ξ51 = $ξ51", 
-	label = "" 
+plot(
+    -1:0.001:1.0,
+    get_kappa.(-1:0.001:1.0),
+    xlabel = "ξ31",
+    ylabel = "K2ν",
+    title = "fixed ξ51 = $ξ51",
+    label = "",
 )
 
 # ╔═╡ 28b2613c-ab28-42ea-bd5a-65ac9362fbc3
@@ -130,13 +148,13 @@ G4file = "/home/shoram/Work/PhD_Thesis/Data_RebinnedSpectra/Se82/1-Gfactors/spec
 
 # ╔═╡ 538cdea7-031f-4d6f-9e2e-df158516e9d0
 function add_spectra(ξ31, ξ51, G0file, G2file, G22file, G4file)
-	dG0 = readdlm(G0file, Float64)[:,3]
-	dG2 = readdlm(G2file, Float64)[:,3]
-	dG22 = readdlm(G22file, Float64)[:,3]
-	dG4 = readdlm(G4file, Float64)[:,3]
+    dG0 = readdlm(G0file, Float64)[:, 3]
+    dG2 = readdlm(G2file, Float64)[:, 3]
+    dG22 = readdlm(G22file, Float64)[:, 3]
+    dG4 = readdlm(G4file, Float64)[:, 3]
 
-	dG = @. dG0 + ξ31*dG2 + 1/3*(ξ31)^2*dG22 + (1/3*(ξ31)^2 + ξ51)*dG4
-	return dG
+    dG = @. dG0 + ξ31 * dG2 + 1 / 3 * (ξ31)^2 * dG22 + (1 / 3 * (ξ31)^2 + ξ51) * dG4
+    return dG
 end
 
 # ╔═╡ f7a4f137-867b-4b5f-8e94-224902c2117b
@@ -154,9 +172,9 @@ Kappa = round(get_kappa(ξ31), digits = 4)
 dG = add_spectra(ξ31, ξ51, G0file, G2file, G22file, G4file);
 
 # ╔═╡ a3c17d4e-1d53-4ace-bc9f-07e6f9d76809
-begin 
-	E1 = readdlm(G0file, Float64)[:,1]
-	E2 = readdlm(G0file, Float64)[:,2]
+begin
+    E1 = readdlm(G0file, Float64)[:, 1]
+    E2 = readdlm(G0file, Float64)[:, 2]
 end;
 
 # ╔═╡ ce4b1223-b01c-4fc1-83ad-b3c0260acdd6
@@ -170,7 +188,7 @@ saveFileName = "xi51_$ξ51-xi31_$ξ31-K2v_$Kappa-G0_G2_G22_G4.csv";
 
 # ╔═╡ 00575fb1-6fe8-4e8c-a734-793f18c57e61
 open(joinpath(dataDir, saveFileName), "w") do io
-   writedlm(io, [E1 E2 dG], "    ")
+    writedlm(io, [E1 E2 dG], "    ")
 end
 
 # ╔═╡ ca7600f1-37ac-4461-82a5-71243a5dc2ee

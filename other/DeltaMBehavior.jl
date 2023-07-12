@@ -7,7 +7,14 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local iv = try
+            Base.loaded_modules[Base.PkgId(
+                Base.UUID("6e696c72-6542-2067-7265-42206c756150"),
+                "AbstractPlutoDingetjes",
+            )].Bonds.initial_value
+        catch
+            b -> missing
+        end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
@@ -22,44 +29,44 @@ using PlutoUI
 
 
 # ╔═╡ 573034af-3584-4c0d-b41f-69002774ae9e
-begin 
-	gr() 
-	theme(
-	    :dao;
-	    size           = (800, 800),
-	    legend         = :topleft,
-	    guidefontsize  = 16,
-	    tickfontsize   = 12,
-	    titlefontsize  = 16,
-	    legendfontsize = 12,
-	    left_margin    = 4Plots.mm,
-	    right_margin   = 8Plots.mm,
-	    top_margin     = 4Plots.mm,
-	    bottom_margin  = 6Plots.mm,
-	    dpi            = 200,
-	    :colorbar_titlefontsize => 20,
-	    widen = :false,
-		:markerstrokewidth => 1,
-		:markerstrokecolor => :black,
-	);
+begin
+    gr()
+    theme(
+        :dao;
+        size = (800, 800),
+        legend = :topleft,
+        guidefontsize = 16,
+        tickfontsize = 12,
+        titlefontsize = 16,
+        legendfontsize = 12,
+        left_margin = 4Plots.mm,
+        right_margin = 8Plots.mm,
+        top_margin = 4Plots.mm,
+        bottom_margin = 6Plots.mm,
+        dpi = 200,
+        :colorbar_titlefontsize => 20,
+        widen = :false,
+        :markerstrokewidth => 1,
+        :markerstrokecolor => :black,
+    )
 
 end
 
 # ╔═╡ 76f10b3a-c91d-440d-978f-f07f1aa0b4f9
 function DeltaM(r, M, N)
-	sq = sqrt(1/M + 1/N)
-	num = 3r + sqrt(r)*(r+3) + 1
-	den = (1-r)^3
+    sq = sqrt(1 / M + 1 / N)
+    num = 3r + sqrt(r) * (r + 3) + 1
+    den = (1 - r)^3
 
-	return num/den*r*sq
+    return num / den * r * sq
 end
 
 # ╔═╡ 94349747-2a64-4c62-995c-85f342a49a74
 function Mmin(r, M, N)
-	num = r + sqrt(r)*sqrt(M/N)
-	den = 1-r
-	
-	return (num/den)^2
+    num = r + sqrt(r) * sqrt(M / N)
+    den = 1 - r
+
+    return (num / den)^2
 end
 
 # ╔═╡ 1a18f1e0-a946-4c92-9f27-7b199f401656
@@ -87,16 +94,18 @@ DeltaM(0.98, Mtot, Ntot)
 rRange = rmin:0.0001:rmax
 
 # ╔═╡ 57e35898-ee05-4c1b-a399-aa95dbda3324
-p3 = plot(rRange, f1.(rRange), 
-	xlabel = "r", 
-	ylabel = "M(r)",
-	label = "",
-	lw = 4,
-	size = (800,400),
-	yscale= :log10,
-	yticks= [10^3, 10^4, 10^5, 10^6, 10^7, 10^8],
-	xticks= 0.9:0.01:1.0,
-	thickness_scaling = 1.2
+p3 = plot(
+    rRange,
+    f1.(rRange),
+    xlabel = "r",
+    ylabel = "M(r)",
+    label = "",
+    lw = 4,
+    size = (800, 400),
+    yscale = :log10,
+    yticks = [10^3, 10^4, 10^5, 10^6, 10^7, 10^8],
+    xticks = 0.9:0.01:1.0,
+    thickness_scaling = 1.2,
 )
 
 # ╔═╡ 965bec1b-4ec6-4cbb-a35f-7391711e8fb6
@@ -116,23 +125,21 @@ figsDir = "/media/shoram/Extra SSD/CernBox/Work/Presentations/2023/2023_04_19_SV
 (Mtot, Ntot, rmin, rmax)
 
 # ╔═╡ 85a22f78-6e85-4ff1-8cbf-ae58c9f96cfe
-p2 = plot(rRange, f.(rRange), 
-	xlabel = "r", 
-	ylabel = "ΔM",
-	label = "",
-)
+p2 = plot(rRange, f.(rRange), xlabel = "r", ylabel = "ΔM", label = "")
 
 
 # ╔═╡ 95396920-edad-4cfb-8c5f-d0800ddb0de0
-p1 = plot(rRange, f1.(rRange), 
-	xlabel = "r", 
-	ylabel = "Mmin",
-	label = "Mtot = $Mtot \nNtot = $Ntot \nrmin = $rmin \nrmax = $rmax",
-	legend = :topleft	
+p1 = plot(
+    rRange,
+    f1.(rRange),
+    xlabel = "r",
+    ylabel = "Mmin",
+    label = "Mtot = $Mtot \nNtot = $Ntot \nrmin = $rmin \nrmax = $rmax",
+    legend = :topleft,
 )
 
 # ╔═╡ 90755c8a-2be9-4a66-ad47-98fb54d09436
-plot(p1, p2, link =:y)
+plot(p1, p2, link = :y)
 
 # ╔═╡ d6dc2a83-6b97-4d95-9455-7ae14d17c7e0
 
