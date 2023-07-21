@@ -37,7 +37,7 @@ export ChisqTest, get_best_sample_size, get_efficiency
 export Chi2 # main Module object
 
 include("./KS.jl")
-export get_best_sample_size, get_efficiency
+export get_best_sample_size, get_efficiency, get_pVals
 export KS# main Module object
 
 end #MODULE END

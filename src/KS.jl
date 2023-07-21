@@ -83,6 +83,20 @@ function get_best_sample_size(
     return sampleSizes[idx]
 end
 
+
+function get_pVals(ks::KS, sampleSizes, nSamples = 100)
+    pVals = Vector{Vector{<:Real}}(undef, length(sampleSizes))   # initiaite a container to hold vectors of 100 p-values for each sample size
+    
+    for (i, sampleSize) in enumerate(sampleSizes)
+        samples1 = get_samples(ks.vector1, sampleSize, nSamples, true)
+        samples2 = get_samples(ks.vector2, sampleSize, nSamples, true)
+
+        pVals[i] = ApproximateTwoSampleKSTest.(samples1, samples2) .|> pvalue
+    end
+
+    return pVals
+end
+
 # function AnalysisModule.get_efficiency(ks::KS, CL::Real, sampleSize::Real)
 #     pValsId =
 #         isempty(findfirst(x -> x == sampleSize, ks.sampleSizes)) ?

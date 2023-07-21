@@ -138,7 +138,7 @@ begin
     resPhi = scatter(
         midpoints(0:Δϕ:180),
         AM.get_residuals(phi1, phi2, 0:Δϕ:180, true),
-        yerr = AM.get_residuals_errors(phi1, phi2, 0:Δϕ:180, true),
+        yerr = AM.get_residuals_errors(phi1, phi2, 0:Δϕ:180),
         mc = :black,
         label = "",
         ylabel = "refined/SM",
@@ -165,7 +165,6 @@ begin
             singleElectronEnergies1,
             singleElectronEnergies2,
             0:ΔE:3000,
-            true,
         ),
         mc = :black,
         label = "",
@@ -477,15 +476,14 @@ end
 
 # ╔═╡ 576f03a1-1d95-4a0a-a8df-d368af5d6d37
 begin
-	KSEne = @suppress AM.KS(
-		singleElectronEnergies1, singleElectronEnergies2,  CL)
+	KSEne = @suppress AM.KS(singleElectronEnergies1, singleElectronEnergies2,  CL)
 	KSPhi = @suppress AM.KS(phi1, phi2, CL)
 end
 
 # ╔═╡ c08eec73-44df-42c2-845e-5f654093cddc
 begin
-	meansKSPhi = mean.(KSPhi.pVals)
-	meansKSEne = mean.(KSEne.pVals)
+	meansKSPhi = mean.(get_pVals(KSPhi, sampleSizes))
+	meansKSEne = mean.(get_pVals(KSEne, sampleSizes))
 	meansChi2Phi = mean.(Chi2Phi.pVals)
 	meansChi2Ene = mean.(Chi2Ene.pVals)
 end
@@ -824,7 +822,7 @@ UnROOT = "~0.8.21"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.1"
+julia_version = "1.9.2"
 manifest_format = "2.0"
 project_hash = "ff9bffc15194090e4a842a319e3e9e23ff75cc69"
 
@@ -1026,7 +1024,7 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.0.2+0"
+version = "1.0.5+0"
 
 [[deps.ConcurrentUtilities]]
 deps = ["Serialization", "Sockets"]
@@ -1753,7 +1751,7 @@ version = "0.42.2+0"
 [[deps.Pkg]]
 deps = ["Artifacts", "Dates", "Downloads", "FileWatching", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Serialization", "TOML", "Tar", "UUIDs", "p7zip_jll"]
 uuid = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-version = "1.9.0"
+version = "1.9.2"
 
 [[deps.PlotThemes]]
 deps = ["PlotUtils", "Statistics"]

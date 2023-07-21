@@ -96,7 +96,7 @@ function get_residuals(vector1, vector2, binrange, normed = true)
 end
 
 
-function get_residuals_errors(vector1, vector2, binrange, normed = true )
+function get_residuals_errors(vector1, vector2, binrange, normed = false )
 	hist1 = StatsBase.fit(Histogram{Float64}, vector1, binrange) 
 	hist2 = StatsBase.fit(Histogram{Float64}, vector2, binrange) 
 
