@@ -480,12 +480,21 @@ begin
 	KSPhi = @suppress AM.KS(phi1, phi2, CL)
 end
 
+# ╔═╡ b70e1b8d-935c-4625-ace4-347924a00570
+begin
+	pValsKSPhi = AM.get_pVals(KSPhi, sampleSizes)
+	pValsKSEne = AM.get_pVals(KSEne, sampleSizes)
+
+	pValsChi2Phi = Chi2Phi.pVals
+	pValsChi2Ene = Chi2Ene.pVals
+end
+
 # ╔═╡ c08eec73-44df-42c2-845e-5f654093cddc
 begin
-	meansKSPhi = mean.(get_pVals(KSPhi, sampleSizes))
-	meansKSEne = mean.(get_pVals(KSEne, sampleSizes))
-	meansChi2Phi = mean.(Chi2Phi.pVals)
-	meansChi2Ene = mean.(Chi2Ene.pVals)
+	meansKSPhi = mean.(pValsKSPhi)
+	meansKSEne = mean.(pValsKSPhi)
+	meansChi2Phi = mean.(pValsChi2Phi)
+	meansChi2Ene = mean.(pValsChi2Ene)
 end
 
 
@@ -514,7 +523,7 @@ Above is a plot of mean p-values for each combination. We can see that the `ener
 
 # ╔═╡ bb61aa57-0649-48fc-99e6-859c05f3e7a8
 begin
-	bxPhiKS = boxplot(KSPhi.pVals, label = "", xticks=(1:length(sampleSizes), sampleSizes), xrotation = 45, c=1, fa = 0.5, xlabel = "sample size", ylabel ="p-value", title= "φ: KS test for various sample sizes", size =(1200,600), bottom_margin = 12Plots.mm, thickness_scaling = 1.5)
+	bxPhiKS = boxplot(pValsKSPhi, label = "", xticks=(1:length(sampleSizes), sampleSizes), xrotation = 45, c=1, fa = 0.5, xlabel = "sample size", ylabel ="p-value", title= "φ: KS test for various sample sizes", size =(1200,600), bottom_margin = 12Plots.mm, thickness_scaling = 1.5)
 
 	
 	lens!([length(sampleSizes)-12, length(sampleSizes)], [0.0, 0.05], inset = (1, bbox(0.57, 0.2, 0.4, 0.3)), lc=:black, lw =:3, xrotation=45, framestyle =:box)
@@ -542,7 +551,7 @@ Right away we can see that KS test is more strict when it comes to rejecting H0.
 # ╔═╡ 5e04ec18-cbcd-4487-858a-7b9dfd942e51
 begin 
 	bp1 = boxplot(
-		KSPhi.pVals, 
+		pValsKSPhi, 
 		label="", 
 		xticks=:none, 
 		xrotation=65, 
@@ -553,12 +562,13 @@ begin
 		bottom_margin=0Plots.px,
 		left_margin=0Plots.px,
 		right_margin=0Plots.px,
-		ylims=(0,1)
+		ylims=(0,1),
+		
 	)
 	annotate!([(18,0.8,("φ: KS", 20))])
 
 	bp2 = boxplot(
-		KSEne.pVals, 
+		pValsKSEne, 
 		label="", 
 		xticks=:none, #(1:length(sampleSizes), sampleSizes), 
 		xrotation=65, 
@@ -574,7 +584,7 @@ begin
 	annotate!([(18,0.8,("E: KS", 20))])
 
 	bp3 = boxplot(
-		filter!.(x -> x .>=0, Chi2Phi.pVals), 
+		filter!.(x -> x .>=0, pValsChi2Phi), 
 		label="", 
 		xticks=(1:length(sampleSizes), sampleSizes), 
 		xrotation=65, 
@@ -591,7 +601,7 @@ begin
 	
 
 	bp4 = boxplot(
-		filter!.(x -> x .>=0, Chi2Ene.pVals), 
+		filter!.(x -> x .>=0, pValsChi2Ene), 
 		label="", 
 		xticks=(1:length(sampleSizes), sampleSizes), 
 		xrotation=65, 
@@ -628,14 +638,14 @@ begin
 	alpha = 1-0.95
 	
 	effKSPhi95 = 
-		count.(p -> p<=alpha, KSPhi.pVals)./length.(KSPhi.pVals).*100 .|> round .|>Int
+		count.(p -> p<=alpha, pValsKSPhi)./length.(pValsKSPhi).*100 .|> round .|>Int
 	effKSEne95 = 
-		count.(p -> p<=alpha, KSEne.pVals)./length.(KSEne.pVals).*100 .|> round .|>Int 
+		count.(p -> p<=alpha, pValsKSEne)./length.(pValsKSEne).*100 .|> round .|>Int 
 	
 	effChiPhi95 = 
-		count.(p -> p<=alpha, Chi2Phi.pVals)./length.(Chi2Phi.pVals).*100 .|> round .|>Int
+		count.(p -> p<=alpha, pValsChi2Phi)./length.(pValsChi2Phi).*100 .|> round .|>Int
 	effChiEne95 = 
-		count.(p -> p<=alpha, Chi2Ene.pVals)./length.(Chi2Ene.pVals).*100 .|> round .|>Int
+		count.(p -> p<=alpha, pValsChi2Ene)./length.(pValsChi2Ene).*100 .|> round .|>Int
 
 end
 
@@ -2483,6 +2493,7 @@ version = "0.31.1+0"
 # ╠═3d268ae3-f1db-489d-887d-de555417c467
 # ╠═a593dd52-19e8-4502-9ff5-2211c6a4565a
 # ╠═576f03a1-1d95-4a0a-a8df-d368af5d6d37
+# ╠═b70e1b8d-935c-4625-ace4-347924a00570
 # ╠═c08eec73-44df-42c2-845e-5f654093cddc
 # ╟─e7e5a693-efe1-4a2d-8aa1-4c24ee377168
 # ╠═dbbe2190-9af5-43c5-b9b5-6f5d5cab77c2

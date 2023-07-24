@@ -16,7 +16,8 @@ function KS(
         collect(20_000:10_000:100_000),
         collect(100_000:50_000:950_000),
     ),
-    maxSampleSize = 1_000_000
+    maxSampleSize = 1_000_000,
+    verbose = true
 ) where T<:Real
     pVals = Vector{T}(undef, nSamples)   # initiaite a container to hold vectors of 100 p-values 
     efficiency = float(0)                # efficiency 
@@ -28,8 +29,13 @@ function KS(
     i = 1 
     sampleSize = sampleSizes[i]
 
-    while (nInARowCounter != nInARow || sampleSize == maxSampleSize)
-        sampleSize = sampleSizes[i]
+    while (nInARowCounter != nInARow && sampleSize <= maxSampleSize)
+        if( i <= length(sampleSizes) )
+            sampleSize = sampleSizes[i]
+        else
+            sampleSize += 50_000 
+        end
+
         samples1 = get_samples(vector1, sampleSize, nSamples, true)
         samples2 = get_samples(vector2, sampleSize, nSamples, true)
 
@@ -41,9 +47,21 @@ function KS(
         else
             nInARowCounter = 0
         end
+
+        if(verbose)
+            @show "Current Sample Size = $sampleSize; ε = $efficiency"
+        end
+
         i += 1
     end
-    minEvents = sampleSize
+    minEvents = sampleSize < maxSampleSize ? sampleSize : maxSampleSize
+
+    if(verbose)
+        if( sampleSize > maxSampleSize )
+            @warn "Did not reach $nInARow 100% efficiencies before reaching max sample size= $maxSampleSize. Setting best sample size to $maxSampleSize."
+        end
+        @show "best sample size: $minEvents"
+    end
 
     return KS(
         vector1,
@@ -54,36 +72,9 @@ function KS(
 end
 
 
-function get_best_sample_size(
-    efficiencies::Vector{<:Real},
-    sampleSizes::Vector{<:Real},
-    nInARow::Int = 3,
-)
-    idx = 1
-
-    length(efficiencies) < nInARow &&
-        error("size of data: $(length(efficiencies)) is less than nInARow: $nInARow")
-
-    sumOfLastN = sum(efficiencies[end-nInARow+1:end]) # sum of the last nInARow numbers
-
-    if (sumOfLastN < nInARow)
-        @warn(
-            "Did not get $nInARow 100% efficiencies in a row. Please increase sample size. Returning last sampleSize."
-        )
-        return sampleSizes[end]
-    end
-
-    for j = length(efficiencies):-1:nInARow+1 # iterate backwards
-        sumOfEffs = sum(efficiencies[j-nInARow+1:j])
-        idx = j + 1
-        if (sumOfEffs < nInARow)
-            break
-        end
-    end
-    return sampleSizes[idx]
-end
 
 
+ 
 function get_pVals(ks::KS, sampleSizes, nSamples = 100)
     pVals = Vector{Vector{<:Real}}(undef, length(sampleSizes))   # initiaite a container to hold vectors of 100 p-values for each sample size
     

@@ -6,7 +6,7 @@ using Revise
 using StatsPlots, UnROOT, StatsBase
 using FHist, DataFramesMeta, Distributions, RecipesBase, Suppressor, HypothesisTests
 
-push!(LOAD_PATH, "src/")
+push!(LOAD_PATH, pwd()*"/src/")
 using AnalysisModule
 Revise.track(AnalysisModule)
 
@@ -28,10 +28,12 @@ phi2 = fill_from_root_file(file2, "tree", "phi") # vector phi angles for compare
 
 CL = 0.95
 
-sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_000))
+sampleSizes = [10000,20000]# vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_000))
 
-KSEne = @suppress KS(singleElectronEnergies1, singleElectronEnergies2,  CL)
-KSPhi = @suppress KS(phi1, phi2, CL)
+# KSEne = @suppress KS(singleElectronEnergies1, singleElectronEnergies2,  CL)
+# KSPhi = @suppress KS(phi1, phi2, CL)
 
-get_pVals(KSPhi, sampleSizes)
+Chi2Phi = Chi2(phi1, phi2, CL, 0, 180, 90, sampleSizes = sampleSizes)
+
+get_pVals(Chi2Phi, sampleSizes)
 

@@ -15,7 +15,8 @@ export get_min_value,# returns the minimal value in a matrix that is !!not NaN!!
     get_residuals_errors,
     get_kappa,
     DeltaM,
-    Mmin
+    Mmin,
+    get_best_sample_size
 
 include("./BBB.jl")
 export get_r, # returns the ratio of two bin heights (normalized)
@@ -33,11 +34,11 @@ export get_r, # returns the ratio of two bin heights (normalized)
 export BBB # main Module object
 
 include("./Chi2.jl")
-export ChisqTest, get_best_sample_size, get_efficiency
+export ChisqTest, get_efficiency, get_pVals
 export Chi2 # main Module object
 
 include("./KS.jl")
-export get_best_sample_size, get_efficiency, get_pVals
+export get_efficiency, get_pVals
 export KS# main Module object
 
 end #MODULE END

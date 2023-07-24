@@ -21,6 +21,35 @@ function cartesianIdx_to_range(idx::CartesianIndex{2}, Δϕ::Real)
     return range
 end
 
+function get_best_sample_size(
+    efficiencies::Vector{<:Real},
+    sampleSizes::Vector{<:Real},
+    nInARow::Int = 3,
+)
+    idx = 1
+
+    length(efficiencies) < nInARow &&
+        error("size of data: $(length(efficiencies)) is less than nInARow: $nInARow")
+
+    sumOfLastN = sum(efficiencies[end-nInARow+1:end]) # sum of the last nInARow numbers
+
+    if (sumOfLastN < nInARow)
+        @warn(
+            "Did not get $nInARow 100% efficiencies in a row. Please increase sample size. Returning last sampleSize."
+        )
+        return sampleSizes[end]
+    end
+
+    for j = length(efficiencies):-1:nInARow+1 # iterate backwards
+        sumOfEffs = sum(efficiencies[j-nInARow+1:j])
+        idx = j + 1
+        if (sumOfEffs < nInARow)
+            break
+        end
+    end
+    return sampleSizes[idx]
+end
+
 
 @recipe function f(h::Histogram{T,1,Tuple{Vector{Int64}}}) where {T<:Real}
     bins = vcat([h.edges[1][1]], midpoints(h.edges[1]), [h.edges[1][end]])
