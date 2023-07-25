@@ -1,6 +1,6 @@
-cd("/home/shoram/Work/PhD_Thesis/SNImproved2bbSpectra")
+cd(@__DIR__) #where repository is at
 using Pkg;
-Pkg.activate("/home/shoram/Work/PhD_Thesis/SNImproved2bbSpectra");
+Pkg.activate(".");
 
 using Revise
 using StatsPlots, UnROOT, StatsBase
@@ -28,7 +28,7 @@ phi2 = fill_from_root_file(file2, "tree", "phi") # vector phi angles for compare
 
 CL = 0.95
 
-sampleSizes = [10000,20000]# vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_000))
+sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_000))
 
 # KSEne = @suppress KS(singleElectronEnergies1, singleElectronEnergies2,  CL)
 # KSPhi = @suppress KS(phi1, phi2, CL)

@@ -72,15 +72,19 @@ Figure below shows ``K(\xi_{31}, \xi_{51} = 0.1397)``:
 """
 
 # ╔═╡ 716b3e40-73e6-4d80-8126-8ec10d0d64fb
-plot(
-    -1:0.001:1.0,
-    AM.get_kappa.(-1:0.001:1.0),
-    xlabel = "ξ31",
-    ylabel = "K2ν",
-    title = "fixed ξ51 = 0.1397",
-    label = "",
-    lw = 4,
-)
+let p
+	p = plot(
+	    -1:0.001:1.0,
+	    AM.get_kappa.(-1:0.001:1.0),
+	    xlabel = "ξ31",
+	    ylabel = "K2ν",
+	    title = "fixed ξ51 = 0.1397",
+	    label = "",
+	    lw = 4,
+	)
+	savefig("Figs/xi31_vs_Kappa.pdf")
+	p
+end
 
 # ╔═╡ 6e1c4c5b-08a3-44fa-bd34-770fd38c03a3
 md"""
@@ -115,6 +119,7 @@ begin
 
     phi1 = AM.fill_from_root_file(file1, "tree", "phi") # vector phi angles for reference spectrum    
     phi2 = AM.fill_from_root_file(file2, "tree", "phi") # vector phi angles for compared spectrum   
+	
 end
 
 # ╔═╡ 6c4cc9cc-3344-4ff0-bed3-df7ba1d00bc7
@@ -124,7 +129,7 @@ begin
 end
 
 # ╔═╡ da3a265b-6230-4414-b4c4-01abc5e9b3e8
-begin
+let p
     shPhi = histogram(
         [phi1, phi2],
         normed = :true,
@@ -174,7 +179,7 @@ begin
         ms = 1.5,
     )
 
-    plot(
+    p = plot(
         shPhi,
         shEne,
         resPhi,
@@ -184,6 +189,8 @@ begin
         thickness_scaling = 1.4,
         layout = @layout [a b; c{0.3h} d]
     )
+	savefig("Figs/Angular_and_Energy_dists_w_residuals.pdf")
+	p
 end
 
 # ╔═╡ 95a6b54a-a692-4477-954f-849f015e6825
@@ -470,8 +477,8 @@ end
 # ╔═╡ a593dd52-19e8-4502-9ff5-2211c6a4565a
 begin
 	Chi2Ene = AM.Chi2(
-		singleElectronEnergies1, singleElectronEnergies2, 450, 2100, 150, sampleSizes,  CL)
-	Chi2Phi = AM.Chi2(phi1, phi2, 0, 180, 15, sampleSizes,  CL)
+		singleElectronEnergies1, singleElectronEnergies2, CL, 450, 2100, 150, sampleSizes = sampleSizes)
+	Chi2Phi = AM.Chi2(phi1, phi2, CL, 0, 180, 15, sampleSizes = sampleSizes)
 end
 
 # ╔═╡ 576f03a1-1d95-4a0a-a8df-d368af5d6d37
@@ -485,14 +492,14 @@ begin
 	pValsKSPhi = AM.get_pVals(KSPhi, sampleSizes)
 	pValsKSEne = AM.get_pVals(KSEne, sampleSizes)
 
-	pValsChi2Phi = Chi2Phi.pVals
-	pValsChi2Ene = Chi2Ene.pVals
+	pValsChi2Phi = AM.get_pVals(Chi2Phi, sampleSizes)
+	pValsChi2Ene = AM.get_pVals(Chi2Ene, sampleSizes)
 end
 
 # ╔═╡ c08eec73-44df-42c2-845e-5f654093cddc
 begin
 	meansKSPhi = mean.(pValsKSPhi)
-	meansKSEne = mean.(pValsKSPhi)
+	meansKSEne = mean.(pValsKSEne)
 	meansChi2Phi = mean.(pValsChi2Phi)
 	meansChi2Ene = mean.(pValsChi2Ene)
 end
@@ -510,10 +517,15 @@ plot(
 	markersize = 8, 
 	markershape = [:c :diamond :d :star5],
 	xticks = xticks,
+	yticks = [1e-10, 1e-8, 1e-6, 1e-4, 1e-2, 1e0],
 	xlabel = "sample size", 
 	ylabel ="p-value",
 	title= "mean p-values for combination of tests and distributions",
-	xrotation = 55
+	xrotation = 55,
+	# yerr = [ std(pValsKSPhi) std(pValsKSEne) std(pValsChi2Phi) std(pValsChi2Ene)],
+	ylims = (1e-10,1),
+	yscale = :log10,
+	legend = :bottomleft
 )
 
 # ╔═╡ 852b33c3-99fb-4d3f-b22c-737a301a9cd8
@@ -649,6 +661,14 @@ begin
 
 end
 
+# ╔═╡ cf835376-e192-4e90-9945-c072e44ae3bd
+begin
+	errKSPhi = AM.prop_error.(effKSPhi95, 100, true) 
+	errKSEne = AM.prop_error.(effKSEne95, 100, true)
+	errChiPhi = AM.prop_error.(effChiPhi95, 100, true)
+	errChiEne = AM.prop_error.(effChiEne95, 100, true)
+end
+
 # ╔═╡ 3651c0a2-acd0-4193-9cc4-d3f7d1cd55b3
 begin
 	grpbKS = groupedbar(
@@ -662,6 +682,7 @@ begin
 		title  = L"\textrm{efficiency ~of ~passing ~KS}~\textrm{test ~for ~CL ~=} %$(CL)",
 		xticks = (1:length(sampleSizes), sampleSizes),
 		xrotation=45,
+		legend = :bottomright
 	)
 	
 	grpbChi = groupedbar(
@@ -675,6 +696,8 @@ begin
 		title  = L"\textrm{efficiency ~of ~passing }~\mathrm{\chi^2} ~\textrm{test ~for ~CL ~=} %$(CL)",
 		xticks = (1:length(sampleSizes), sampleSizes),
 		xrotation=45,
+		legend = :bottomright
+		
 	)
 	
 	plot(grpbKS, grpbChi, layout = grid(2,1))
@@ -687,10 +710,10 @@ Finally we can create a table of *S* for the various defined methods and sample 
 
 # ╔═╡ 8a705628-67f8-45c1-be41-a0531e5378b5
 for (cl, nsig) in zip([0.68, 0.90, 0.95], [1, 1.645, 1.96])
-	minKSPhi = AM.get_best_sample_size(KSPhi, sampleSizes, cl, 100,3)
-	minKSEne = AM.get_best_sample_size(KSEne, sampleSizes, cl, 100,3)
-	minChi2Phi = AM.get_best_sample_size(Chi2Phi, sampleSizes, cl, 100,3)
-	minChi2Ene = AM.get_best_sample_size(Chi2Ene, sampleSizes, cl, 100,3)
+	minKSPhi = KSPhi.minEvents
+	minKSEne = KSEne.minEvents
+	minChi2Phi = Chi2Phi.minEvents
+	minChi2Ene = Chi2Ene.minEvents
 	minBBBPhi = AM.BBB(phi1, phi2, 0, 180, Δϕ, nsig).minEvents
 	minBBBEne = AM.BBB(singleElectronEnergies1, singleElectronEnergies2, 0, 3000, ΔE, nsig).minEvents
 end
@@ -790,6 +813,21 @@ begin
 
     savefig(joinpath(figDir, bfigtitle))
 end
+
+# ╔═╡ 5b1dadf4-8030-42c4-8eaf-45b246a07f31
+violin(sampleSizes, pValsKSEne,side=:right, linewidth=0, label="")
+
+# ╔═╡ fb739410-42f1-4f0d-90d9-d222ae120315
+df1 = DataFrame(pValsKSEne, :auto)
+
+# ╔═╡ 354d0950-08e9-48b5-bf7d-6dd03049f0ae
+boxplot(collect(1:23)', pValsKSPhi[1:end], label = "", c = 2, xticks = (1:length(sampleSizes), sampleSizes), xrotation = 45, side = :right, yscale = :log10)
+
+# ╔═╡ fff6b96d-90c8-43f1-8260-a3068109dcbe
+[1 2]
+
+# ╔═╡ b1a6750c-c9a7-43c2-9169-8e1d300d74fa
+Matrix(sampleSizes[1:2]')
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2468,7 +2506,7 @@ version = "0.31.1+0"
 # ╠═411eeb6b-6902-4cd9-8bda-8ebae1de81b1
 # ╠═5565017c-534f-46a5-b86b-37753c42da24
 # ╠═afeccb00-7abf-11ed-194a-558eaaa68040
-# ╟─716b3e40-73e6-4d80-8126-8ec10d0d64fb
+# ╠═716b3e40-73e6-4d80-8126-8ec10d0d64fb
 # ╠═6e1c4c5b-08a3-44fa-bd34-770fd38c03a3
 # ╠═a7e6341c-6f8b-42a6-b440-368fea258855
 # ╠═6c4cc9cc-3344-4ff0-bed3-df7ba1d00bc7
@@ -2504,6 +2542,7 @@ version = "0.31.1+0"
 # ╠═5e04ec18-cbcd-4487-858a-7b9dfd942e51
 # ╟─75f2bc28-529e-47e1-95cf-e8a6b2f864ec
 # ╠═dc755feb-58eb-4be2-a6f8-5e2b51a06411
+# ╠═cf835376-e192-4e90-9945-c072e44ae3bd
 # ╠═3651c0a2-acd0-4193-9cc4-d3f7d1cd55b3
 # ╟─5163e320-0711-42e8-89c6-90994f612c56
 # ╠═8a705628-67f8-45c1-be41-a0531e5378b5
@@ -2513,5 +2552,10 @@ version = "0.31.1+0"
 # ╠═45b56c40-2c2b-4725-9cf8-85958947f25b
 # ╠═02e4fab7-c042-4f80-a616-2f318f177302
 # ╠═9ee70dbc-e29a-4bfc-a5f8-84afe88eb00b
+# ╠═5b1dadf4-8030-42c4-8eaf-45b246a07f31
+# ╠═fb739410-42f1-4f0d-90d9-d222ae120315
+# ╠═354d0950-08e9-48b5-bf7d-6dd03049f0ae
+# ╠═fff6b96d-90c8-43f1-8260-a3068109dcbe
+# ╠═b1a6750c-c9a7-43c2-9169-8e1d300d74fa
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
