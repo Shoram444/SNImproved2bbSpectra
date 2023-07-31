@@ -33,10 +33,15 @@ phi1 = fill_from_root_file(file1, "tree", "phi") # vector phi angles for referen
 phi2 = fill_from_root_file(file2, "tree", "phi") # vector phi angles for compared spectrum    
 
 ## Analysis 
-CL = 0.95
+CL = 0.50
 sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_000))
 
 Chi2Phi = Chi2(phi1, phi2, CL, 0, 180, 90, sampleSizes = sampleSizes)
 
-get_pVals(Chi2Phi, sampleSizes)
+@benchmark get_pVals($Chi2Phi, $sampleSizes)
+@benchmark get_pVals_Fast($Chi2Phi, $sampleSizes)
+
+using LoopVectorization
+using BenchmarkTools: @benchmark, @btime
+import AnalysisModule:ChisqTest
 

@@ -88,17 +88,20 @@ function get_pVals(ks::KS, sampleSizes, nSamples = 100)
     return pVals
 end
 
-# function AnalysisModule.get_efficiency(ks::KS, CL::Real, sampleSize::Real)
-#     pValsId =
-#         isempty(findfirst(x -> x == sampleSize, ks.sampleSizes)) ?
-#         error(
-#             "invalid sample size, $sampleSize, not in provided sample sizes $ks.sampleSizes",
-#         ) : findfirst(x -> x == sampleSize, chi2.sampleSizes)
 
-#     return AnalysisModule.get_efficiency(ks.pVals[pValsId], ks.CL)
-# end
+@inline function get_pVals_Fast(ks::KS, sampleSizes, nSamples = 100)
+    pVals = Vector{Vector{<:Real}}(undef, length(sampleSizes))   # initiaite a container to hold vectors of 100 p-values for each sample size
+    
+    @inbounds Threads.@threads for i in eachindex(sampleSizes)
 
-# function get_best_sample_size(ks::KS, sampleSizes, CL, nSamples, nInARow)
-#     effs = get_efficiency.(ks.pVals, CL, nSamples)
-#     return get_best_sample_size(effs, sampleSizes, nInARow)
-# end
+        pVals[i] = ApproximateTwoSampleKSTest.(
+            get_samples(chi2.vector1, sampleSizes[i], nSamples, true), 
+            get_samples(chi2.vector2, sampleSizes[i], nSamples, true), 
+            chi2.xMin, 
+            chi2.xMax, 
+            chi2.xStep
+            ) .|> pvalue
+    end
+
+    return pVals
+end
