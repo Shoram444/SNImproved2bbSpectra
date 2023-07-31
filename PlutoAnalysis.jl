@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.26
+# v0.19.27
 
 using Markdown
 using InteractiveUtils
@@ -827,7 +827,7 @@ boxplot(collect(1:23)', pValsKSPhi[1:end], label = "", c = 2, xticks = (1:length
 [1 2]
 
 # ╔═╡ b1a6750c-c9a7-43c2-9169-8e1d300d74fa
-Matrix(sampleSizes[1:2]')
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
