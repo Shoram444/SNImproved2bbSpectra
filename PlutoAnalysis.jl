@@ -122,6 +122,9 @@ begin
 	
 end
 
+# ╔═╡ 9ebe9890-a1a0-40ca-9d16-f24633f9de92
+GC.gc() ## run garbage collection
+
 # ╔═╡ 6c4cc9cc-3344-4ff0-bed3-df7ba1d00bc7
 begin
     Δϕ = 5 # setting bin width
@@ -428,6 +431,9 @@ We can see in these maps, that the values for *stats-needed* can take a very wid
 2. Energy distribution: $(BBBEne.minEvents) for ROI: $(BBBEne.minROI) keV
 """
 
+# ╔═╡ e80946c3-21bb-4e6b-91c3-5e7c4d69b1b0
+GC.gc() ## run garbage collection
+
 # ╔═╡ ed4d68ee-131a-4a44-99a3-eac9ece030c8
 md"""
 The concludions from this method should be taken with a grain of salt as it is very non-standard. We therefore use more common approaches: ``\chi^2`` and KS.
@@ -469,9 +475,9 @@ The constructor then makes three more fieds:
 
 # ╔═╡ 3d268ae3-f1db-489d-887d-de555417c467
 begin
-    sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_000))
+    sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:600_000))
     xticks = (1:length(sampleSizes), sampleSizes)
-    CL = 0.95
+    CL = 0.90
 end
 
 # ╔═╡ a593dd52-19e8-4502-9ff5-2211c6a4565a
@@ -483,20 +489,32 @@ end
 
 # ╔═╡ 576f03a1-1d95-4a0a-a8df-d368af5d6d37
 begin
-	KSEne = @suppress AM.KS(singleElectronEnergies1, singleElectronEnergies2,  CL)
-	KSPhi = @suppress AM.KS(phi1, phi2, CL)
+	KSEne = AM.KS(singleElectronEnergies1, singleElectronEnergies2,  CL)
+	KSPhi = AM.KS(phi1, phi2, CL)
 end
+
+# ╔═╡ beb51fc9-a263-421d-ba38-45482e195df3
+GC.gc()
 
 # ╔═╡ b70e1b8d-935c-4625-ace4-347924a00570
 begin
-	pValsKSPhi = AM.get_pVals(KSPhi, sampleSizes)
-	pValsKSEne = AM.get_pVals(KSEne, sampleSizes)
-
-	pValsChi2Phi = AM.get_pVals(Chi2Phi, sampleSizes)
-	pValsChi2Ene = AM.get_pVals(Chi2Ene, sampleSizes)
+	pValsKSPhi = AM.get_pVals_Fast(KSPhi, sampleSizes)   # function with Fast uses multithreading
+	pValsKSEne = AM.get_pVals_Fast(KSEne, sampleSizes)
 end
 
+# ╔═╡ c1c978d4-3c57-49df-a66b-0b9904f9641d
+GC.gc()
+
 # ╔═╡ c08eec73-44df-42c2-845e-5f654093cddc
+begin
+	pValsChi2Phi = AM.get_pVals_Fast(Chi2Phi, sampleSizes)
+	pValsChi2Ene = AM.get_pVals_Fast(Chi2Ene, sampleSizes)
+end
+
+# ╔═╡ a9a2fcec-56c6-4a02-a3b7-305db54053fb
+GC.gc()
+
+# ╔═╡ e7243b92-2fb5-49fb-8649-ff537f3b442c
 begin
 	meansKSPhi = mean.(pValsKSPhi)
 	meansKSEne = mean.(pValsKSEne)
@@ -504,6 +522,8 @@ begin
 	meansChi2Ene = mean.(pValsChi2Ene)
 end
 
+# ╔═╡ a91f0d71-1d7b-4956-940a-fe146020fd9d
+GC.gc()
 
 # ╔═╡ e7e5a693-efe1-4a2d-8aa1-4c24ee377168
 md"""
@@ -2524,6 +2544,7 @@ version = "0.31.1+0"
 # ╠═716b3e40-73e6-4d80-8126-8ec10d0d64fb
 # ╠═6e1c4c5b-08a3-44fa-bd34-770fd38c03a3
 # ╠═a7e6341c-6f8b-42a6-b440-368fea258855
+# ╠═9ebe9890-a1a0-40ca-9d16-f24633f9de92
 # ╠═6c4cc9cc-3344-4ff0-bed3-df7ba1d00bc7
 # ╠═da3a265b-6230-4414-b4c4-01abc5e9b3e8
 # ╟─95a6b54a-a692-4477-954f-849f015e6825
@@ -2539,15 +2560,21 @@ version = "0.31.1+0"
 # ╟─a5037ddd-09bd-4f59-b9b8-c23dba5de9b8
 # ╟─31f648a2-cdb3-4def-8f04-dbfc65787536
 # ╠═21771deb-b4a7-4b08-aba6-46f2f7089788
-# ╟─6c3b9653-3d26-4c07-a362-de5649879d12
+# ╠═6c3b9653-3d26-4c07-a362-de5649879d12
+# ╟─e80946c3-21bb-4e6b-91c3-5e7c4d69b1b0
 # ╟─ed4d68ee-131a-4a44-99a3-eac9ece030c8
 # ╟─ac6ee28c-72a2-4e79-8cb1-2f5a60eea8c2
 # ╟─53484f4e-129e-4aa1-8e24-959eaa9cdb3d
 # ╠═3d268ae3-f1db-489d-887d-de555417c467
 # ╠═a593dd52-19e8-4502-9ff5-2211c6a4565a
 # ╠═576f03a1-1d95-4a0a-a8df-d368af5d6d37
+# ╟─beb51fc9-a263-421d-ba38-45482e195df3
 # ╠═b70e1b8d-935c-4625-ace4-347924a00570
+# ╟─c1c978d4-3c57-49df-a66b-0b9904f9641d
 # ╠═c08eec73-44df-42c2-845e-5f654093cddc
+# ╟─a9a2fcec-56c6-4a02-a3b7-305db54053fb
+# ╠═e7243b92-2fb5-49fb-8649-ff537f3b442c
+# ╟─a91f0d71-1d7b-4956-940a-fe146020fd9d
 # ╟─e7e5a693-efe1-4a2d-8aa1-4c24ee377168
 # ╠═dbbe2190-9af5-43c5-b9b5-6f5d5cab77c2
 # ╟─852b33c3-99fb-4d3f-b22c-737a301a9cd8

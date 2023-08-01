@@ -81,8 +81,8 @@ end
 function get_samples(
     data::Vector{<:Real},
     sample_size::Real,
-    n_samples::Real,
-    replace = false,
+    n_samples::Real;
+    replace = true,
 )
     sample_size = Int(sample_size)
     n_samples = Int(n_samples)
@@ -94,13 +94,17 @@ function get_samples(
         )
     end
 
-    subsets = Array{Vector{Int}}(undef, n_samples)
-    if (replace == false)
-        sample_indices = StatsBase.sample(1:data_size, sample_size, replace = replace)
-        subsets = [data[sample_size*(x-1)+1:sample_size*x] for x = 1:n_samples]
+    subsets = Array{Vector{eltype(data)}}(undef, n_samples)
+    if (replace == true)
+        @inbounds @simd for i=1:n_samples
+            subsets[i] = StatsBase.sample(data, sample_size, replace = replace)
+        end
     else
-        subsets =
-            [StatsBase.sample(data, sample_size, replace = replace) for x = 1:n_samples]
+        indexes = rand(1:data_size, n_samples*sample_size)
+        @inbounds for i = 1:n_samples
+            low, high = Int(1+(i-1)*n_samples):n_samples+(i-1)*n_samples
+            subsets[i] = data[indexes[low:high]]
+        end
     end
 
     return subsets

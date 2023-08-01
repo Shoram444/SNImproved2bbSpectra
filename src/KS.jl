@@ -71,9 +71,6 @@ function KS(
     )
 end
 
-
-
-
  
 function get_pVals(ks::KS, sampleSizes, nSamples = 100)
     pVals = Vector{Vector{<:Real}}(undef, length(sampleSizes))   # initiaite a container to hold vectors of 100 p-values for each sample size
@@ -89,17 +86,14 @@ function get_pVals(ks::KS, sampleSizes, nSamples = 100)
 end
 
 
-@inline function get_pVals_Fast(ks::KS, sampleSizes, nSamples = 100)
+function get_pVals_Fast(ks::KS, sampleSizes, nSamples = 100)
     pVals = Vector{Vector{<:Real}}(undef, length(sampleSizes))   # initiaite a container to hold vectors of 100 p-values for each sample size
     
     @inbounds Threads.@threads for i in eachindex(sampleSizes)
 
         pVals[i] = ApproximateTwoSampleKSTest.(
-            get_samples(chi2.vector1, sampleSizes[i], nSamples, true), 
-            get_samples(chi2.vector2, sampleSizes[i], nSamples, true), 
-            chi2.xMin, 
-            chi2.xMax, 
-            chi2.xStep
+            get_samples(ks.vector1, sampleSizes[i], nSamples, true), 
+            get_samples(ks.vector2, sampleSizes[i], nSamples, true)
             ) .|> pvalue
     end
 

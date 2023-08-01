@@ -762,9 +762,9 @@ version = "0.3.21"
 
 [[deps.HypothesisTests]]
 deps = ["Combinatorics", "Distributions", "LinearAlgebra", "Printf", "Random", "Rmath", "Roots", "Statistics", "StatsAPI", "StatsBase"]
-git-tree-sha1 = "4b5d5ba51f5f473737ed9de6d8a7aa190ad8c72f"
+path = "/home/shoram/.julia/dev/HypothesisTests"
 uuid = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
-version = "0.11.0"
+version = "0.11.1"
 
 [[deps.IOCapture]]
 deps = ["Logging", "Random"]

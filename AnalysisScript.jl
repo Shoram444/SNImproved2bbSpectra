@@ -5,7 +5,7 @@ Pkg.activate(Base.current_project());
 
 ## Packages
 using Revise
-using StatsPlots, UnROOT, StatsBase
+using StatsPlots, UnROOT, StatsBase, BenchmarkTools
 using FHist, DataFramesMeta, Distributions, RecipesBase, Suppressor, HypothesisTests
 
 
@@ -37,11 +37,4 @@ CL = 0.50
 sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_000))
 
 Chi2Phi = Chi2(phi1, phi2, CL, 0, 180, 90, sampleSizes = sampleSizes)
-
-@benchmark get_pVals($Chi2Phi, $sampleSizes)
-@benchmark get_pVals_Fast($Chi2Phi, $sampleSizes)
-
-using LoopVectorization
-using BenchmarkTools: @benchmark, @btime
-import AnalysisModule:ChisqTest
 
