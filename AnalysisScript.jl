@@ -38,3 +38,6 @@ sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_00
 
 Chi2Phi = Chi2(phi1, phi2, CL, 0, 180, 90, sampleSizes = sampleSizes)
 
+KSPhi = KS(phi1, phi2, CL,sampleSizes = sampleSizes)
+
+@benchmark KS(phi1, phi2, CL,sampleSizes = sampleSizes)
