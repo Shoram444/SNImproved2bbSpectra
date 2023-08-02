@@ -10,7 +10,7 @@ using FHist, DataFramesMeta, Distributions, RecipesBase, Suppressor, HypothesisT
 
 
 ## Including the Analysis Module 
-push!(LOAD_PATH, pwd()*"/src/")
+push!(LOAD_PATH, pwd() * "/src/")
 using AnalysisModule
 Revise.track(AnalysisModule)
 
@@ -36,8 +36,6 @@ phi2 = fill_from_root_file(file2, "tree", "phi") # vector phi angles for compare
 CL = 0.50
 sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_000))
 
-Chi2Phi = Chi2(phi1, phi2, CL, 0, 180, 90, sampleSizes = sampleSizes)
-
-KSPhi = KS(phi1, phi2, CL,sampleSizes = sampleSizes)
-
-@benchmark KS(phi1, phi2, CL,sampleSizes = sampleSizes)
+Chi2Phi = Chi2(phi1, phi2, CL, 0, 180, 90, sampleSizes = sampleSizes, nSamples = 20,)
+KSPhi = KS(phi1, phi2, CL, sampleSizes = sampleSizes, nSamples = 20, maxSampleSize = 500_000)
+ADPhi = AD(phi1, phi2, CL, sampleSizes = sampleSizes, nSamples = 20, maxSampleSize = 500_000)

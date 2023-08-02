@@ -6,7 +6,7 @@ mutable struct BBB
     stepSize::Real
     nSigma::Real
     minEvents::Real
-    minROI::Tuple{<:Real, <:Real}
+    minROI::Tuple{<:Real,<:Real}
 end
 
 function BBB(
@@ -16,12 +16,11 @@ function BBB(
     xMax::Real,
     stepSize::Real,
     nSigma::Real,
-) where T<:Real
+) where {T<:Real}
     if ((xMax - xMin) / stepSize % 1 != 0.0)  # check the boundaries of the histogram
         error("Range must be integer divisible by stepsize! ")
     end
-    matStatsMr =
-        get_min_stats_map(vector1, vector2, xMin, xMax, stepSize, nSigma)   # get matrix of min stats
+    matStatsMr = get_min_stats_map(vector1, vector2, xMin, xMax, stepSize, nSigma)   # get matrix of min stats
     replace!(matStatsMr, 0.0 => NaN)
     replace!(matStatsMr, Inf => NaN)
 
@@ -30,16 +29,7 @@ function BBB(
     minROIidx = get_min_idx(matStatsMr)                                              # find where min value is at
     minROI = cartesianIdx_to_range(minROIidx, stepSize)                           # convert from index to cartesian coordinates
 
-    return BBB(
-        vector1,
-        vector2,
-        xMin,
-        xMax,
-        stepSize,
-        nSigma,
-        minEvents,
-        minROI
-    )
+    return BBB(vector1, vector2, xMin, xMax, stepSize, nSigma, minEvents, minROI)
 end
 
 function get_r(h1::Hist1D, h2::Hist1D, xMin::Real, xMax::Real, Δϕ::Real)
@@ -298,7 +288,7 @@ function get_min_stats_map(
     xMin::Real,
     xMax::Real,
     stepSize::Real,
-    nSigma::Real
+    nSigma::Real,
 )
     h1 = Hist1D(vec1, xMin:stepSize:xMax)
     h2 = Hist1D(vec2, xMin:stepSize:xMax)

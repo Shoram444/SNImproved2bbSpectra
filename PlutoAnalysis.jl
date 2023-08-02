@@ -76,11 +76,12 @@ let p
 	p = plot(
 	    -1:0.001:1.0,
 	    AM.get_kappa.(-1:0.001:1.0),
-	    xlabel = "ξ31",
-	    ylabel = "K2ν",
-	    title = "fixed ξ51 = 0.1397",
+	    xlabel = L"\xi_{31}",
+	    ylabel = L"K^{2\nu}_{refined}",
+	    title = L"K^{2\nu}_{refined}(\xi_{31}, \xi_{51} = 0.1397 )",
 	    label = "",
 	    lw = 4,
+		thickness_scaling = 1.2
 	)
 	savefig("Figs/xi31_vs_Kappa.pdf")
 	p
@@ -137,10 +138,11 @@ let p
         [phi1, phi2],
         normed = :true,
         nbins = 0:Δϕ:180,
-        label = ["Κ=-0.88 (SM)" "Κ=-0.6639 (refined)"],
+        label = ["Κ=-0.88 (standard)" "Κ=-0.6639 (refined)"],
         xlabel = "escape angle φ [°]",
         ylabel = "normalized count rate",
-        lw = 4,
+		ylims = (0, 0.011),
+        lw = 3,
     )
 
     resPhi = scatter(
@@ -149,21 +151,23 @@ let p
         yerr = AM.get_residuals_errors(phi1, phi2, 0:Δϕ:180),
         mc = :black,
         label = "",
-        ylabel = "refined/SM",
+        ylabel = "refined/standard",
         xlabel = "escape angle φ [°]",
-        ms = 1.5,
+        ms = 0.8,
         ylims = (0.8, 1.2),
+		xlims = (0, 180)
     )
 
     shEne = histogram(
         [singleElectronEnergies1, singleElectronEnergies2],
         normed = :true,
         nbins = 0:ΔE:3000,
-        label = ["SM" "ξ31=0.37 (refined)"],
+        label = ["ξ31=0 (standard)" "ξ31=0.37 (refined)"],
         xlabel = L"\textrm{single ~electron ~energy ~T_e ~[keV]}",
         ylabel = "normalized count rate",
         legend = :best,
-        lw = 4,
+        lw = 3,
+		ylims = (0, 0.001),
     )
 
     resEne = scatter(
@@ -176,10 +180,11 @@ let p
         ),
         mc = :black,
         label = "",
-        ylabel = "refined/SM",
+        ylabel = "refined/standard",
         xlabel = L"\textrm{single ~electron ~energy ~T_e ~[keV]}",
         ylims = (0.8, 1.2),
-        ms = 1.5,
+        ms = 0.8,
+		xlims = (0, 3000)
     )
 
     p = plot(
@@ -188,8 +193,8 @@ let p
         resPhi,
         resEne,
         plot_title = "reconstructed distributions",
-        size = (2000, 1000),
-        thickness_scaling = 1.4,
+        size = (1400, 1000),
+        thickness_scaling = 1.3,
         layout = @layout [a b; c{0.3h} d]
     )
 	savefig("Figs/Angular_and_Energy_dists_w_residuals.pdf")
@@ -597,7 +602,7 @@ begin
 		ylims=(0,1),
 		
 	)
-	annotate!([(18,0.8,("φ: KS", 20))])
+	annotate!([(length(sampleSizes)-3,0.8,("φ: KS", 20))])
 
 	bp2 = boxplot(
 		pValsKSEne, 
@@ -613,7 +618,7 @@ begin
 		right_margin=0Plots.px,
 		ylims=(0,1)
 	)
-	annotate!([(18,0.8,("E: KS", 20))])
+	annotate!([(length(sampleSizes)-3,0.8,("E: KS", 20))])
 
 	bp3 = boxplot(
 		filter!.(x -> x .>=0, pValsChi2Phi), 
@@ -629,7 +634,7 @@ begin
 		right_margin=0Plots.px,
 		ylims=(0,1)
 	)
-	annotate!([(18,0.8,(L"\mathrm{φ:~ \chi^2}", 20))])
+	annotate!([(length(sampleSizes)-3,0.8,(L"\mathrm{φ:~ \chi^2}", 20))])
 	
 
 	bp4 = boxplot(
@@ -646,7 +651,7 @@ begin
 		yticks=:false,
 		ylims=(0,1)
 	)
-	annotate!([(18,0.8,(L"\mathrm{E:~ \chi^2}", 20))])
+	annotate!([(length(sampleSizes)-3,0.8,(L"\mathrm{E:~ \chi^2}", 20))])
 	
 
 	bxpAll = plot(
@@ -845,9 +850,6 @@ boxplot(collect(1:23)', pValsKSPhi[1:end], label = "", c = 2, xticks = (1:length
 
 # ╔═╡ fff6b96d-90c8-43f1-8260-a3068109dcbe
 [1 2]
-
-# ╔═╡ b1a6750c-c9a7-43c2-9169-8e1d300d74fa
-
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2598,6 +2600,5 @@ version = "0.31.1+0"
 # ╠═fb739410-42f1-4f0d-90d9-d222ae120315
 # ╠═354d0950-08e9-48b5-bf7d-6dd03049f0ae
 # ╠═fff6b96d-90c8-43f1-8260-a3068109dcbe
-# ╠═b1a6750c-c9a7-43c2-9169-8e1d300d74fa
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

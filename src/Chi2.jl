@@ -26,8 +26,8 @@ function Chi2(
         collect(100_000:50_000:950_000),
     ),
     maxSampleSize = 1_000_000,
-    verbose = :true
-) where T<:Real
+    verbose = :true,
+) where {T<:Real}
     if ((xMax - xMin) / xStep % 1 != 0.0)  # check the boundaries of the histogram
         error("Range must be integer divisible by xStep! ")
     end
@@ -36,55 +36,47 @@ function Chi2(
     efficiency = float(0)                # efficiency 
     nInARowCounter = 0                   # a counter for n in a row 100% efficiencies
 
-    samples1 = Vector{T}(undef, nSamples)
-    samples2 = Vector{T}(undef, nSamples)
+    samples1 = Vector{Vector{T}}(undef, nSamples)
+    samples2 = Vector{Vector{T}}(undef, nSamples)
 
-    i = 1 
+    i = 1
     sampleSize = sampleSizes[i]
 
     while (nInARowCounter != nInARow && sampleSize <= maxSampleSize)
-        if( i <= length(sampleSizes) )
+        if (i <= length(sampleSizes))
             sampleSize = sampleSizes[i]
         else
-            sampleSize += 50_000 
+            sampleSize += 50_000
         end
 
-        samples1 = get_samples(vector1, sampleSize, nSamples, true)
-        samples2 = get_samples(vector2, sampleSize, nSamples, true)
+        samples1 = get_samples(vector1, sampleSize, nSamples; replace = true)
+        samples2 = get_samples(vector2, sampleSize, nSamples; replace = true)
 
         @views pVals = ChisqTest.(samples1, samples2, xMin, xMax, xStep) .|> pvalue
         efficiency = get_efficiency(pVals, CL, nSamples)
 
-        if(efficiency == 1.0)
+        if (efficiency == 1.0)
             nInARowCounter += 1
         else
             nInARowCounter = 0
         end
 
-        if(verbose)
-            @show "Current Sample Size = $sampleSize; ε = $efficiency"
+        if (verbose)
+            println("Current Sample Size = $sampleSize; ε = $efficiency")
         end
 
         i += 1
     end
     minEvents = sampleSize < maxSampleSize ? sampleSize : maxSampleSize
 
-    if(verbose)
-        if( sampleSize > maxSampleSize )
+    if (verbose)
+        if (sampleSize > maxSampleSize)
             @warn "Did not reach $nInARow 100% efficiencies before reaching max sample size= $maxSampleSize. Setting best sample size to $maxSampleSize."
         end
-        @show "best sample size: $minEvents"
+        println("best sample size: $minEvents")
     end
-    
-    return Chi2(
-        vector1,
-        vector2,
-        CL,
-        minEvents,
-        xMin,
-        xMax,
-        xStep
-    )
+
+    return Chi2(vector1, vector2, CL, minEvents, xMin, xMax, xStep)
 end
 
 
@@ -163,12 +155,13 @@ end
 
 function get_pVals(chi2::Chi2, sampleSizes, nSamples = 100)
     pVals = Vector{Vector{<:Real}}(undef, length(sampleSizes))   # initiaite a container to hold vectors of 100 p-values for each sample size
-    
-    for (i, sampleSize) in enumerate(sampleSizes)
-        samples1 = get_samples(chi2.vector1, sampleSize, nSamples, true)
-        samples2 = get_samples(chi2.vector2, sampleSize, nSamples, true)
 
-        pVals[i] = ChisqTest.(samples1, samples2, chi2.xMin, chi2.xMax, chi2.xStep) .|> pvalue
+    for (i, sampleSize) in enumerate(sampleSizes)
+        samples1 = get_samples(chi2.vector1, sampleSize, nSamples; replace = true)
+        samples2 = get_samples(chi2.vector2, sampleSize, nSamples; replace = true)
+
+        pVals[i] =
+            ChisqTest.(samples1, samples2, chi2.xMin, chi2.xMax, chi2.xStep) .|> pvalue
     end
 
     return pVals
@@ -176,15 +169,16 @@ end
 
 function get_pVals_Fast(chi2::Chi2, sampleSizes, nSamples = 100)
     pVals = Vector{Vector{<:Real}}(undef, length(sampleSizes))   # initiaite a container to hold vectors of 100 p-values for each sample size
-    
+
     @inbounds Threads.@threads for i in eachindex(sampleSizes)
 
-        pVals[i] = ChisqTest.(
-            get_samples(chi2.vector1, sampleSizes[i], nSamples, true), 
-            get_samples(chi2.vector2, sampleSizes[i], nSamples, true), 
-            chi2.xMin, 
-            chi2.xMax, 
-            chi2.xStep
+        pVals[i] =
+            ChisqTest.(
+                get_samples(chi2.vector1, sampleSizes[i], nSamples; replace = true),
+                get_samples(chi2.vector2, sampleSizes[i], nSamples; replace = true),
+                chi2.xMin,
+                chi2.xMax,
+                chi2.xStep,
             ) .|> pvalue
     end
 

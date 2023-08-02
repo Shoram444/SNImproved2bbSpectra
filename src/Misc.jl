@@ -96,13 +96,13 @@ function get_samples(
 
     subsets = Array{Vector{eltype(data)}}(undef, n_samples)
     if (replace == true)
-        @inbounds @simd for i=1:n_samples
+        @inbounds @simd for i = 1:n_samples
             subsets[i] = StatsBase.sample(data, sample_size, replace = replace)
         end
     else
-        indexes = rand(1:data_size, n_samples*sample_size)
+        indexes = rand(1:data_size, n_samples * sample_size)
         @inbounds for i = 1:n_samples
-            low, high = Int(1+(i-1)*n_samples):n_samples+(i-1)*n_samples
+            low, high = Int(1 + (i - 1) * n_samples):n_samples+(i-1)*n_samples
             subsets[i] = data[indexes[low:high]]
         end
     end
@@ -129,24 +129,24 @@ function get_residuals(vector1, vector2, binrange, normed = true)
 end
 
 
-function get_residuals_errors(vector1, vector2, binrange, normed = false )
-	hist1 = StatsBase.fit(Histogram{Float64}, vector1, binrange) 
-	hist2 = StatsBase.fit(Histogram{Float64}, vector2, binrange) 
+function get_residuals_errors(vector1, vector2, binrange, normed = false)
+    hist1 = StatsBase.fit(Histogram{Float64}, vector1, binrange)
+    hist2 = StatsBase.fit(Histogram{Float64}, vector2, binrange)
 
-	bincounts1 = hist1.weights
-	bincounts2 = hist2.weights
-	
-	if (normed)
-		nTotal1 = length(vector1)
+    bincounts1 = hist1.weights
+    bincounts2 = hist2.weights
+
+    if (normed)
+        nTotal1 = length(vector1)
         nTotal2 = length(vector2)
 
-		bincounts1 ./= nTotal1 # normalized bincounts
+        bincounts1 ./= nTotal1 # normalized bincounts
         bincounts2 ./= nTotal2 # normalized bincounts
-	end
-	r = bincounts1./ bincounts2
-	res = @. r*sqrt( 1/ bincounts1 + 1/ bincounts2)
+    end
+    r = bincounts1 ./ bincounts2
+    res = @. r * sqrt(1 / bincounts1 + 1 / bincounts2)
 
-	return res
+    return res
 end
 
 function prop_error(npassed, ntot, percent = false)

@@ -34,11 +34,15 @@ export get_r, # returns the ratio of two bin heights (normalized)
 export BBB # main Module object
 
 include("./Chi2.jl")
-export ChisqTest, get_efficiency, get_pVals, get_pVals_Fast
+export ChisqTest, get_pVals, get_pVals_Fast
 export Chi2 # main Module object
 
 include("./KS.jl")
-export get_efficiency, get_pVals, get_pVals_Fast
+export get_pVals, get_pVals_Fast
 export KS# main Module object
+
+include("./AD.jl")
+export get_pVals, get_pVals_Fast
+export AD# main Module object
 
 end #MODULE END

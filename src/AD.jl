@@ -49,7 +49,7 @@ function AD(
         end
 
         if (verbose)
-            @show "Current Sample Size = $sampleSize; ε = $efficiency"
+            println("Current Sample Size = $sampleSize; ε = $efficiency")
         end
 
         i += 1
@@ -60,7 +60,7 @@ function AD(
         if (sampleSize > maxSampleSize)
             @warn "Did not reach $nInARow 100% efficiencies before reaching max sample size= $maxSampleSize. Setting best sample size to $maxSampleSize."
         end
-        @show "best sample size: $minEvents"
+        println("best sample size: $minEvents")
     end
 
     return AD(vector1, vector2, CL, minEvents)
@@ -95,3 +95,4 @@ function get_pVals_Fast(ad::AD, sampleSizes, nSamples = 100)
 
     return pVals
 end
+
