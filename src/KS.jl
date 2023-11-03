@@ -3,6 +3,7 @@ mutable struct KS
     vector2::Vector{<:Real}
     CL::Real
     minEvents::Real
+    pVals::DataFrame
 end
 
 function KS(
@@ -22,6 +23,7 @@ function KS(
     pVals = Vector{T}(undef, nSamples)   # initiaite a container to hold vectors of 100 p-values 
     efficiency = float(0)                # efficiency 
     nInARowCounter = 0                   # a counter for n in a row 100% efficiencies
+    dfpVals = DataFrame()              # create unfilled pVals dataframe
 
     samples1 = Vector{Vector{T}}(undef, nSamples)
     samples2 = Vector{Vector{T}}(undef, nSamples)
@@ -40,6 +42,7 @@ function KS(
         samples2 = get_samples(vector2, sampleSize, nSamples; replace = true)
 
         @views pVals = ApproximateTwoSampleKSTest.(samples1, samples2) .|> pvalue
+        dfpVals[!, string(sampleSize)] = pVals
         efficiency = get_efficiency(pVals, CL, nSamples)
 
         if (efficiency == 1.0)
@@ -63,7 +66,24 @@ function KS(
         println("best sample size: $minEvents")
     end
 
-    return KS(vector1, vector2, CL, minEvents)
+    return KS(vector1, vector2, CL, minEvents, dfpVals)
+end
+
+
+function KS(
+    vector1::Vector{T},
+    vector2::Vector{T},
+    CL::Real,
+    pathToCSV::String,
+) where {T<:Real}
+    dfpVals = CSV.File(pathToCSV) |> DataFrame
+
+    efficiencies = get_efficiency.(eachcol(dfpVals), CL)
+
+    sampleSizes = parse.(Int, names(dfpVals))
+    minEvents = get_best_sample_size(efficiencies, sampleSizes)
+
+    return KS(vector1, vector2, CL, minEvents, dfpVals)
 end
 
 
@@ -94,4 +114,11 @@ function get_pVals_Fast(ks::KS, sampleSizes, nSamples = 100)
     end
 
     return pVals
+end
+
+
+function get_best_sample_size(ks::KS, CL; nInARow = 3)
+    effs = get_efficiency.(eachcol(ks.pVals), CL, nrow(ks.pVals))
+    sampleSizes = parse.(Int, names(ks.pVals))
+    return get_best_sample_size(effs, sampleSizes, nInARow)
 end

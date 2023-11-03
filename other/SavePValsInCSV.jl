@@ -35,31 +35,49 @@ function main()
     for CL in CLs
         @show "First CL starting, CL = $CL"
 
-        
-        Chi2Phi = Chi2( phi1, phi2, CL, 0, 180, 15, sampleSizes = sampleSizes )
-        Chi2Ene = Chi2( singleElectronEnergies1, singleElectronEnergies2, CL, 450, 2100, 150, sampleSizes = sampleSizes )
+
+        Chi2Phi = Chi2(phi1, phi2, CL, 0, 180, 15, sampleSizes = sampleSizes)
+        Chi2Ene = Chi2(
+            singleElectronEnergies1,
+            singleElectronEnergies2,
+            CL,
+            450,
+            2100,
+            150,
+            sampleSizes = sampleSizes,
+        )
         @show Chi2Phi.minEvents, Chi2Ene.minEvents
 
-        KSPhi = KS( phi1, phi2, CL, sampleSizes = sampleSizes )
-        KSEne = KS( singleElectronEnergies1, singleElectronEnergies2, CL, sampleSizes = sampleSizes )
+        KSPhi = KS(phi1, phi2, CL, sampleSizes = sampleSizes)
+        KSEne = KS(
+            singleElectronEnergies1,
+            singleElectronEnergies2,
+            CL,
+            sampleSizes = sampleSizes,
+        )
         @show KSPhi.minEvents, KSEne.minEvents
 
-        ADPhi = AD( phi1, phi2, CL, sampleSizes = sampleSizes )
-        ADEne = AD( singleElectronEnergies1, singleElectronEnergies2, CL, sampleSizes = sampleSizes )
+        ADPhi = AD(phi1, phi2, CL, sampleSizes = sampleSizes)
+        ADEne = AD(
+            singleElectronEnergies1,
+            singleElectronEnergies2,
+            CL,
+            sampleSizes = sampleSizes,
+        )
         @show ADPhi.minEvents, ADEne.minEvents
 
-        @show "Starting get_pVals, CL = $CL" 
+        @show "Starting get_pVals, CL = $CL"
         pValsChi2Phi = get_pVals(Chi2Phi, sampleSizes)
         pValsChi2Ene = get_pVals(Chi2Ene, sampleSizes)
         pValsKSPhi = get_pVals(KSPhi, sampleSizes)
         pValsKSEne = get_pVals(KSEne, sampleSizes)
         pValsADPhi = get_pVals(ADPhi, sampleSizes)
         pValsADEne = get_pVals(ADEne, sampleSizes)
-        @show "Finished get_pVals, CL = $CL" 
+        @show "Finished get_pVals, CL = $CL"
 
 
         dfChi2Phi = DataFrame(pValsChi2Phi, ["$sampleSize" for sampleSize in sampleSizes])
-        dfChi2Ene = DataFrame(pValsChi2Ene, ["$sampleSize" for sampleSize in sampleSizes])    
+        dfChi2Ene = DataFrame(pValsChi2Ene, ["$sampleSize" for sampleSize in sampleSizes])
         dfKSPhi = DataFrame(pValsKSPhi, ["$sampleSize" for sampleSize in sampleSizes])
         dfKSEne = DataFrame(pValsKSEne, ["$sampleSize" for sampleSize in sampleSizes])
         dfADPhi = DataFrame(pValsADPhi, ["$sampleSize" for sampleSize in sampleSizes])
@@ -73,7 +91,7 @@ function main()
         saveNameADEne = string("pValseADEne_CL=$CL.csv")
 
         CSV.write(saveNameChi2Phi, dfChi2Phi)
-        CSV.write(saveNameChi2Ene, dfChi2Ene)    
+        CSV.write(saveNameChi2Ene, dfChi2Ene)
         CSV.write(saveNameKSPhi, dfKSPhi)
         CSV.write(saveNameKSEne, dfKSEne)
         CSV.write(saveNameADPhi, dfADPhi)

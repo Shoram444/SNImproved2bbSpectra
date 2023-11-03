@@ -16,8 +16,8 @@ Revise.track(AnalysisModule)
 
 
 ## Load data 
-fName1 = "../Job17/Data/2vbb_Se82_Falaise_EneThetaPhi_1e8E.root"                           # root file for reference spectra
-fName2 = "../Job17/Data/G0-G4_xi31_037_kappa_m06639_1e8E.root"   # root file for compared spectra
+fName1 = joinpath("../Job21/Data_wo_Bfield/Falaise_2nubb_1e6E.root")                           # root file for reference spectra
+fName2 = joinpath("../Job21/Data_wo_Bfield/Xi31_060_1e6E.root")   # root file for compared spectra
 
 file1 = ROOTFile(fName1)
 file2 = ROOTFile(fName2)
@@ -33,9 +33,15 @@ phi1 = fill_from_root_file(file1, "tree", "phi") # vector phi angles for referen
 phi2 = fill_from_root_file(file2, "tree", "phi") # vector phi angles for compared spectrum    
 
 ## Analysis 
-CL = 0.50
-sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:800_000))
+CL = 0.9
+sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:500_000))
 
-Chi2Phi = Chi2(phi1, phi2, CL, 0, 180, 90, sampleSizes = sampleSizes, nSamples = 20,)
-KSPhi = KS(phi1, phi2, CL, sampleSizes = sampleSizes, nSamples = 20, maxSampleSize = 500_000)
-ADPhi = AD(phi1, phi2, CL, sampleSizes = sampleSizes, nSamples = 20, maxSampleSize = 500_000)
+# sh1 = stephist(phi1, nbins = 0:5:180, normed = :true, subplot = 1)
+# stephist!(phi2, nbins = 0:5:180, normed = :true)
+
+# sh2 = stephist(singleElectronEnergies1, nbins = 0:30:3000, normed = :true)
+# stephist!(singleElectronEnergies2, nbins = 0:30:3000, normed = :true)
+
+# plot(sh1, sh2)
+Chi2Phi = Chi2(phi1, phi2, CL, 0, 180, 15; sampleSizes = sampleSizes)
+KSPhi = KS(phi1, phi2, CL; sampleSizes = sampleSizes)

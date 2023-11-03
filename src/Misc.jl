@@ -310,3 +310,23 @@ function Mmin(r, M, N)
 
     return (num / den)^2
 end
+
+function get_kappa(
+    ξ31,
+    ξ51 = 0.1397,
+    G0 = 0.334863e-46,
+    G2 = 0.148350E-46,
+    G22 = 0.188606E-47,
+    G4 = 0.824467E-47,
+    H0 = 0.226022E-46,
+    H2 = 0.929409E-47,
+    H22 = 0.108907E-47,
+    H4 = 0.484671E-47,
+)
+    numerator = H0 + ξ31 * H2 + 5 / 9 * ξ31^2 * H22 + (2 / 9 * ξ31^2 + ξ51) * H4
+    denumerator = G0 + ξ31 * G2 + 1 / 3 * ξ31^2 * G22 + (1 / 3 * ξ31^2 + ξ51) * G4
+
+    return -1 * numerator / denumerator
+end
+
+

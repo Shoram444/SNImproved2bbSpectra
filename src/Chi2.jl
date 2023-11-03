@@ -1,6 +1,18 @@
 import Distributions: Chisq, ccdf
 
+"""
+Type ``Chi2`` has the following fields:
 
+    * vector1::Vector{T} - a container for data of reference spectrum
+    * vector2::Vector{T} - a container for data of compared spectrum
+    * CL::Real - a confidence level
+    * minEvents::Real - the best sample size to be used for the CL 
+    * xMin::Real - specifies the minimum edge of the bin
+    * xMax::Real - specifies the maximum edge of the bin
+    * xStep::Real - specifies the binning step
+    * pVals::DataFrame - DataFrame holding the calculated p-values
+
+"""
 mutable struct Chi2{T}
     vector1::Vector{T}
     vector2::Vector{T}
@@ -9,8 +21,31 @@ mutable struct Chi2{T}
     xMin::Real
     xMax::Real
     xStep::Real
+    pVals::DataFrame
 end
 
+"""
+Create a Type Chi2, method takes arguments:
+
+    * vector1::Vector{T} - a container for data of reference spectrum
+    * vector2::Vector{T} - a container for data of compared spectrum
+    * CL::Real - a confidence level 
+    * xMin::Real - specifies the minimum edge of the bin
+    * xMax::Real - specifies the maximum edge of the bin
+    * xStep::Real - specifies the binning step
+
+Keyword arguments: 
+
+    * nInARow = 3  - specifies the condition for how many consequtive 100% efficiencies are required
+    * nSamples = 100 - number of subsets per sample size
+    * sampleSizes = vcat(                 
+        collect(10_000:1000:19_000),
+        collect(20_000:10_000:100_000),
+        collect(100_000:50_000:950_000),
+    ) - default sample sizes
+    * maxSampleSize = 1_000_000 
+    * verbose = :true 
+"""
 function Chi2(
     vector1::Vector{T},
     vector2::Vector{T},
@@ -42,17 +77,21 @@ function Chi2(
     i = 1
     sampleSize = sampleSizes[i]
 
+    dfpVals = DataFrame() # create unfilled pVals dataframe
+
+
     while (nInARowCounter != nInARow && sampleSize <= maxSampleSize)
         if (i <= length(sampleSizes))
             sampleSize = sampleSizes[i]
         else
             sampleSize += 50_000
         end
-
+        
         samples1 = get_samples(vector1, sampleSize, nSamples; replace = true)
         samples2 = get_samples(vector2, sampleSize, nSamples; replace = true)
 
-        @views pVals = ChisqTest.(samples1, samples2, xMin, xMax, xStep) .|> pvalue
+        pVals = ChisqTest.(samples1, samples2, xMin, xMax, xStep) .|> pvalue
+        dfpVals[!, string(sampleSize)] = pVals
         efficiency = get_efficiency(pVals, CL, nSamples)
 
         if (efficiency == 1.0)
@@ -76,7 +115,37 @@ function Chi2(
         println("best sample size: $minEvents")
     end
 
-    return Chi2(vector1, vector2, CL, minEvents, xMin, xMax, xStep)
+
+    return Chi2(vector1, vector2, CL, minEvents, xMin, xMax, xStep, dfpVals)
+end
+
+
+"""
+Create a Type Chi2, method takes arguments:
+
+    * vector1::Vector{T} - a container for data of reference spectrum
+    * vector2::Vector{T} - a container for data of compared spectrum
+    * CL::Real - a confidence level 
+    * pathToCSV::String - a full path to the file containing the calculated pValues in a .csv format
+"""
+function Chi2(
+    vector1::Vector{T},
+    vector2::Vector{T},
+    CL::Real,
+    pathToCSV::String,
+) where {T<:Real}
+    df = CSV.File(pathToCSV) |> DataFrame
+
+    pVals = df[!, 1:end-3]               # the last three columns of the df are the xMin, xMax and xStep
+    xMin, xMax, xStep = df[1, :xMin], df[1, :xMax], df[1, :xStep]
+
+
+    efficiencies = get_efficiency.(eachcol(pVals), CL)
+
+    sampleSizes = parse.(Int, names(pVals))
+    minEvents = get_best_sample_size(efficiencies, sampleSizes)
+
+    return Chi2(vector1, vector2, CL, minEvents, xMin, xMax, xStep, pVals)
 end
 
 
@@ -91,7 +160,7 @@ Input parameters:
 * xMin, xMax, binStep specify the minimum, maximum and step of the bins to compare the distributions
 
 """
-function ChisqTest(
+function MPChisqTest(
     vector1::Vector{<:Real},
     vector2::Vector{<:Real},
     xMin::Real,
@@ -130,6 +199,29 @@ function ChisqTest(
     return testStatistic, pvalue, dof
 end
 
+function HypothesisTests.ChisqTest(
+    vector1::Vector{<:Real},
+    vector2::Vector{<:Real},
+    xMin::Real,
+    xMax::Real,
+    xStep::Real,
+)
+
+    if ((xMax - xMin) / xStep % 1 != 0.0)  # check the boundaries of the histogram
+        error("Range must be integer divisible by xStep! ")
+    end
+
+    binRange = xMin:xStep:xMax
+
+    bincounts1 = bincounts(Hist1D(vector1, (binRange)))
+    bincounts2 = bincounts(Hist1D(vector2, (binRange)))
+
+    (minimum(bincounts1) < 5 || minimum(bincounts1) < 5) && error(
+        "ERROR: method only works for bins with >5 counts, please edit histogram range.",
+    )
+
+    return ChisqTest(bincounts1, bincounts2)
+end
 
 function HypothesisTests.pvalue(ChiTest::Tuple{Real,Real,Real})
     return ChiTest[2]
@@ -147,10 +239,12 @@ function AnalysisModule.get_efficiency(chi2::Chi2, CL::Real, sampleSize::Real)
     return AnalysisModule.get_efficiency(chi2.pVals[pValsId], chi2.CL)
 end
 
-function get_best_sample_size(chi::Chi2, sampleSizes, CL, nSamples, nInARow)
-    effs = get_efficiency.(chi.pVals, CL, nSamples)
+function get_best_sample_size(chi::Chi2, CL; nInARow = 3)
+    effs = get_efficiency.(eachcol(chi.pVals), CL, nrow(chi.pVals))
+    sampleSizes = parse.(Int, names(chi.pVals))
     return get_best_sample_size(effs, sampleSizes, nInARow)
 end
+
 
 
 function get_pVals(chi2::Chi2, sampleSizes, nSamples = 100)

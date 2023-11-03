@@ -67,7 +67,7 @@ function AD(
 end
 
 
-function get_pVals(ad::AD, sampleSizes, nSamples = 100) 
+function get_pVals(ad::AD, sampleSizes, nSamples = 100)
     pVals = Vector{Vector{<:Real}}(undef, length(sampleSizes))   # initiaite a container to hold vectors of 100 p-values for each sample size
 
     for (i, sampleSize) in enumerate(sampleSizes)
@@ -95,4 +95,3 @@ function get_pVals_Fast(ad::AD, sampleSizes, nSamples = 100)
 
     return pVals
 end
-

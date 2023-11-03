@@ -1,6 +1,6 @@
 module AnalysisModule
 using FHist
-using RecipesBase, StatsBase, UnROOT, HypothesisTests
+using RecipesBase, StatsBase, UnROOT, HypothesisTests, DataFrames, CSV
 
 include("./Misc.jl")
 export get_min_value,# returns the minimal value in a matrix that is !!not NaN!!
@@ -16,7 +16,8 @@ export get_min_value,# returns the minimal value in a matrix that is !!not NaN!!
     get_kappa,
     DeltaM,
     Mmin,
-    get_best_sample_size
+    get_best_sample_size,
+    get_kappa
 
 include("./BBB.jl")
 export get_r, # returns the ratio of two bin heights (normalized)

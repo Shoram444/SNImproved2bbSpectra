@@ -15,11 +15,14 @@ begin
         ColorSchemes,
         Suppressor,
         HypothesisTests,
-        LaTeXStrings
+        LaTeXStrings,
+		CSV
     using FHist, DataFramesMeta, Distributions, DataFrames, RecipesBase
     using PlutoUI
-
-    AM = include("./src/AnalysisModule.jl")
+	
+	push!(LOAD_PATH, pwd() * "/src/") # path to AnalysisModule
+	using AnalysisModule
+	Revise.track(AnalysisModule)
 end
 
 # ╔═╡ 5565017c-534f-46a5-b86b-37753c42da24
@@ -75,7 +78,7 @@ Figure below shows ``K(\xi_{31}, \xi_{51} = 0.1397)``:
 let p
 	p = plot(
 	    -1:0.001:1.0,
-	    AM.get_kappa.(-1:0.001:1.0),
+	    get_kappa.(-1:0.001:1.0),
 	    xlabel = L"\xi_{31}",
 	    ylabel = L"K^{2\nu}_{refined}",
 	    title = L"K^{2\nu}_{refined}(\xi_{31}, \xi_{51} = 0.1397 )",
@@ -105,21 +108,21 @@ The two spectra are shown below.
 
 # ╔═╡ a7e6341c-6f8b-42a6-b440-368fea258855
 begin
-    fName1 = "/home/shoram/Work/PhD_Thesis/Job17/Data/2vbb_Se82_Falaise_EneThetaPhi_1e8E.root"                           # root file for reference spectra
-    fName2 = "/home/shoram/Work/PhD_Thesis/Job17/Data/G0-G4_xi31_037_kappa_m06639_1e8E.root"   # root file for compared spectra
+    fName1 = "/home/shoram/Work/PhD_Thesis/Job17/Data/Falaise_Spectrum_1e8E.root"                           # root file for reference spectra
+    fName2 = "/home/shoram/Work/PhD_Thesis/Job17/Data/Spectrum_G0_G2_G22_G4_kappa_m06583_xi31_06_xi51_01397_1e8E.root"   # root file for compared spectra
 
     file1 = ROOTFile(fName1)
     file2 = ROOTFile(fName2)
 
     singleElectronEnergies1 =
-        AM.fill_from_root_file(file1, "tree", "reconstructedEnergy1") .+
-        AM.fill_from_root_file(file1, "tree", "reconstructedEnergy2") # vector of single-electron energies for reference spectrum    
+        fill_from_root_file(file1, "tree", "reconstructedEnergy1") .+
+        fill_from_root_file(file1, "tree", "reconstructedEnergy2") # vector of single-electron energies for reference spectrum    
     singleElectronEnergies2 =
-        AM.fill_from_root_file(file2, "tree", "reconstructedEnergy1") .+
-        AM.fill_from_root_file(file2, "tree", "reconstructedEnergy2") # vector of single-electron energies for compared spectrum    
+        fill_from_root_file(file2, "tree", "reconstructedEnergy1") .+
+        fill_from_root_file(file2, "tree", "reconstructedEnergy2") # vector of single-electron energies for compared spectrum    
 
-    phi1 = AM.fill_from_root_file(file1, "tree", "phi") # vector phi angles for reference spectrum    
-    phi2 = AM.fill_from_root_file(file2, "tree", "phi") # vector phi angles for compared spectrum   
+    phi1 = fill_from_root_file(file1, "tree", "phi") # vector phi angles for reference spectrum    
+    phi2 = fill_from_root_file(file2, "tree", "phi") # vector phi angles for compared spectrum   
 	
 end
 
@@ -138,7 +141,7 @@ let p
         [phi1, phi2],
         normed = :true,
         nbins = 0:Δϕ:180,
-        label = ["Κ=-0.88 (standard)" "Κ=-0.6639 (refined)"],
+        label = ["standard" "refined"],
         xlabel = "escape angle φ [°]",
         ylabel = "normalized count rate",
 		ylims = (0, 0.011),
@@ -147,8 +150,8 @@ let p
 
     resPhi = scatter(
         midpoints(0:Δϕ:180),
-        AM.get_residuals(phi1, phi2, 0:Δϕ:180, true),
-        yerr = AM.get_residuals_errors(phi1, phi2, 0:Δϕ:180),
+        get_residuals(phi1, phi2, 0:Δϕ:180, true),
+        yerr = get_residuals_errors(phi1, phi2, 0:Δϕ:180),
         mc = :black,
         label = "",
         ylabel = "refined/standard",
@@ -162,7 +165,7 @@ let p
         [singleElectronEnergies1, singleElectronEnergies2],
         normed = :true,
         nbins = 0:ΔE:3000,
-        label = ["ξ31=0 (standard)" "ξ31=0.37 (refined)"],
+        label = ["standard" "refined"],
         xlabel = L"\textrm{single ~electron ~energy ~T_e ~[keV]}",
         ylabel = "normalized count rate",
         legend = :best,
@@ -172,8 +175,8 @@ let p
 
     resEne = scatter(
         midpoints(0:ΔE:3000),
-        AM.get_residuals(singleElectronEnergies1, singleElectronEnergies2, 0:ΔE:3000, true),
-        yerr = AM.get_residuals_errors(
+        get_residuals(singleElectronEnergies1, singleElectronEnergies2, 0:ΔE:3000, true),
+        yerr = get_residuals_errors(
             singleElectronEnergies1,
             singleElectronEnergies2,
             0:ΔE:3000,
@@ -188,6 +191,7 @@ let p
     )
 
     p = plot(
+		
         shPhi,
         shEne,
         resPhi,
@@ -259,7 +263,7 @@ We first look at the behaviour of `M(r)`. Notice that for ``r \rightarrow 1.0, ~
 # ╔═╡ 8b627eb8-8d8b-431a-9768-0764045db3c8
 plot(
     0.8:0.001:0.999,
-    AM.Mmin.(0.8:0.001:0.999, 1e5, 1e5),
+    Mmin.(0.8:0.001:0.999, 1e5, 1e5),
     xlabel = "r",
     ylabel = "M(r)",
     label = "",
@@ -273,8 +277,8 @@ plot(
 
 # ╔═╡ 6c8d381d-994a-45b3-b59e-73d3c3f4e29d
 begin
-    BBBPhi = AM.BBB(phi1, phi2, 0.0, 180.0, float(Δϕ), 1.0)
-    BBBEne = AM.BBB(
+    BBBPhi = BBB(phi1, phi2, 0.0, 180.0, float(Δϕ), 1.0)
+    BBBEne = BBB(
         singleElectronEnergies1,
         singleElectronEnergies2,
         0.0,
@@ -291,7 +295,7 @@ We can look at what the r-ratios look like for each distribution
 
 # ╔═╡ af03769b-34d1-420a-8397-709b8f6218a3
 begin
-    rBBBPhi = AM.get_r_map(BBBPhi)
+    rBBBPhi = get_r_map(BBBPhi)
     replace!(rBBBPhi, 0.0 => NaN)
 
     hmrBBBPhi = heatmap(
@@ -308,7 +312,7 @@ begin
         title = "r-ratios for BBBPhi",
     )
 
-    rBBBEne = AM.get_r_map(BBBEne)
+    rBBBEne = get_r_map(BBBEne)
     replace!(rBBBEne, 0.0 => NaN)
 
     hmrBBBEne = heatmap(
@@ -388,7 +392,7 @@ In the figure below we show maps for ``S (r)``.
 
 # ╔═╡ 21771deb-b4a7-4b08-aba6-46f2f7089788
 begin
-    sBBBPhi = AM.get_min_stats_map(BBBPhi)
+    sBBBPhi = get_min_stats_map(BBBPhi)
     replace!(sBBBPhi, 0.0 => NaN)
 
     hmsBBBPhi = heatmap(
@@ -406,7 +410,7 @@ begin
         colorbar_scale = :log10,
     )
 
-    sBBBEne = AM.get_min_stats_map(BBBEne)
+    sBBBEne = get_min_stats_map(BBBEne)
     replace!(sBBBEne, 0.0 => NaN)
 
     hmsBBBEne = heatmap(
@@ -463,39 +467,74 @@ md"""
 We define `sampleSizes` (M) to be sizes from 10000 events to 19000 events (in step 1000) and from 20000 to 150000 (in steps of 10000) and up to 400000 in steps of 50000.
 
 The methods are, again, contained within their own submodules: `Chi2.jl` and `KS.jl`. 
-The input arguments for both are the same:
-1. `vector1::Vector{T}`
-2. `vector2::Vector{T}`
-3. `xMin::Real` # minimum value of the array (i.e. for angles it would be 0 degrees)
-4. `xMax::Real` # maximum value of the array (i.e. for angles it would be 180 degrees)
-5. `stepSize::Real`
-6. `sampleSizes::Vector{<:Real}`
-7. `CL::Real`
+The fields of the respective Types are:
+1. `vector1::Vector{T}` - data of reference spectrum
+2. `vector2::Vector{T}` - data of compared spectrum
+3. `CL::Real` - Confidence level
+4. `minEvents::Real` - calculated best sample size
+5. `pVals::DataFrame` - dataframe containing the calculated p-values
 
-The constructor then makes three more fieds: 
-1. `pVals::Vector{Vector{<:Real}}` - container for p-values, for each subset of size M we get 100 p-values
-2. `efficiencies::Vector{<:Real}` - vector of efficiencies for each subset size
-3. `minEvents::Real` - minimum events required
+Additionally for `Chi2`, since it depends on binning:
+1. `xMin::Real`
+2. `xMax::Real`
+3. `xStep::Real`
+
+There are two ways of constructing the Types. 
+1. From scratch: the object calculates all of the required fields. It takes a lot of memory and a lot of time to do so. An example constructor is: 
+	 Chi2Phi = Chi2(phi1, phi2, CL, xMin, xMax, xStep)
+	 KSEne = AM.KS(singleElectronEnergies1, singleElectronEnergies2,  CL)
+2. From a precreated csv file containing all of the `p-values`. 
+	Chi2Phi = Chi2(phi1, phi2, CL, joinpath("pValues/Chi/pVals_Phi_Chi.csv"))
+
 """
 
 # ╔═╡ 3d268ae3-f1db-489d-887d-de555417c467
 begin
-    sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:600_000))
+    sampleSizes = vcat(collect(20_000:10_000:100_000), collect(150_000:50_000:1000_000))
     xticks = (1:length(sampleSizes), sampleSizes)
     CL = 0.90
 end
 
 # ╔═╡ a593dd52-19e8-4502-9ff5-2211c6a4565a
 begin
-	Chi2Ene = AM.Chi2(
-		singleElectronEnergies1, singleElectronEnergies2, CL, 450, 2100, 150, sampleSizes = sampleSizes)
-	Chi2Phi = AM.Chi2(phi1, phi2, CL, 0, 180, 15, sampleSizes = sampleSizes)
+	Chi2Ene = Chi2(
+		singleElectronEnergies1, singleElectronEnergies2, CL, joinpath("pValues/Chi/pVals_Ene_Chi.csv"))
+	Chi2Phi = Chi2(phi1, phi2, CL, joinpath("pValues/Chi/pVals_Phi_Chi.csv"));
 end
 
 # ╔═╡ 576f03a1-1d95-4a0a-a8df-d368af5d6d37
 begin
-	KSEne = AM.KS(singleElectronEnergies1, singleElectronEnergies2,  CL)
-	KSPhi = AM.KS(phi1, phi2, CL)
+	KSEne = KS(singleElectronEnergies1, singleElectronEnergies2,  CL,joinpath("pValues/KS/pVals_Ene_KS.csv") )
+	KSPhi = KS(phi1, phi2, CL, joinpath("pValues/KS/pVals_Phi_KS.csv"));
+end
+
+# ╔═╡ 8a705628-67f8-45c1-be41-a0531e5378b5
+let df 
+	using PrettyTables
+	
+	CLs = [0.6827, 0.90, 0.9545, 0.9973]
+	sigmas = [1, 1.645, 2., 3.]
+	minKSPhi, minKSEne, minChi2Phi, minChi2Ene, minBBBPhi, minBBBEne = [], [], [], [], [], []
+
+	for (cl, nsig) in zip(CLs, [1, 1.645, 2., 3.])
+		push!(minKSPhi, get_best_sample_size(KSPhi, cl))
+		push!(minKSEne, get_best_sample_size(KSEne, cl))
+		push!(minChi2Phi, get_best_sample_size(Chi2Phi, cl))
+		push!(minChi2Ene, get_best_sample_size(Chi2Ene, cl))
+		push!(minBBBPhi, BBB(phi1, phi2, 0, 180, Δϕ, nsig).minEvents)
+		push!(minBBBEne, BBB(singleElectronEnergies1, singleElectronEnergies2, 0, 3000, ΔE, nsig).minEvents)
+	end
+	df = DataFrame(
+		:CL => round.(CLs,digits =3), 
+		:KSPhi => minKSPhi, 
+		:KSEne => minKSEne, 
+		:Chi2Phi => minChi2Phi, 
+		:Chi2Ene => minChi2Ene, 
+		:BBBPhi => minBBBPhi, 
+		:BBBEne => minBBBEne 
+	)
+
+	# pretty_table(df, backend = Val(:latex)) # convert to Latex Table
 end
 
 # ╔═╡ beb51fc9-a263-421d-ba38-45482e195df3
@@ -503,8 +542,9 @@ GC.gc()
 
 # ╔═╡ b70e1b8d-935c-4625-ace4-347924a00570
 begin
-	pValsKSPhi = AM.get_pVals_Fast(KSPhi, sampleSizes)   # function with Fast uses multithreading
-	pValsKSEne = AM.get_pVals_Fast(KSEne, sampleSizes)
+	pValsKSPhi = KSPhi.pVals   
+	pValsKSEne = KSEne.pVals
+	nothing # to force Pluto to not display the df again
 end
 
 # ╔═╡ c1c978d4-3c57-49df-a66b-0b9904f9641d
@@ -512,8 +552,9 @@ GC.gc()
 
 # ╔═╡ c08eec73-44df-42c2-845e-5f654093cddc
 begin
-	pValsChi2Phi = AM.get_pVals_Fast(Chi2Phi, sampleSizes)
-	pValsChi2Ene = AM.get_pVals_Fast(Chi2Ene, sampleSizes)
+	pValsChi2Phi = Chi2Phi.pVals   
+	pValsChi2Ene = Chi2Ene.pVals
+	nothing # to force Pluto to not display the df again
 end
 
 # ╔═╡ a9a2fcec-56c6-4a02-a3b7-305db54053fb
@@ -521,10 +562,10 @@ GC.gc()
 
 # ╔═╡ e7243b92-2fb5-49fb-8649-ff537f3b442c
 begin
-	meansKSPhi = mean.(pValsKSPhi)
-	meansKSEne = mean.(pValsKSEne)
-	meansChi2Phi = mean.(pValsChi2Phi)
-	meansChi2Ene = mean.(pValsChi2Ene)
+	meansKSPhi = mean.(eachcol(pValsKSPhi))
+	meansKSEne = mean.(eachcol(pValsKSEne))
+	meansChi2Phi = mean.(eachcol(pValsChi2Phi))
+	meansChi2Ene = mean.(eachcol(pValsChi2Ene))
 end
 
 # ╔═╡ a91f0d71-1d7b-4956-940a-fe146020fd9d
@@ -536,22 +577,29 @@ md"""
 """
 
 # ╔═╡ dbbe2190-9af5-43c5-b9b5-6f5d5cab77c2
-plot(
-	[meansKSPhi, meansKSEne, meansChi2Phi, meansChi2Ene],
-	label = ["KS: φ" "KS: Energy" "χ2: φ" "χ2: Energy"],
-	markersize = 8, 
-	markershape = [:c :diamond :d :star5],
-	xticks = xticks,
-	yticks = [1e-10, 1e-8, 1e-6, 1e-4, 1e-2, 1e0],
-	xlabel = "sample size", 
-	ylabel ="p-value",
-	title= "mean p-values for combination of tests and distributions",
-	xrotation = 55,
-	# yerr = [ std(pValsKSPhi) std(pValsKSEne) std(pValsChi2Phi) std(pValsChi2Ene)],
-	ylims = (1e-10,1),
-	yscale = :log10,
-	legend = :bottomleft
-)
+let p 
+	p = plot(
+		[meansKSPhi, meansKSEne, meansChi2Phi, meansChi2Ene],
+		label = ["KS: angle" "KS: Energy" "χ2: angle" "χ2: Energy"],
+		c = [2 1 4 3],
+		markersize = 8, 
+		markershape = [:c :diamond :d :star5],
+		xticks = xticks,
+		yticks = [1e-10, 1e-8, 1e-6, 1e-4, 1e-2, 1e0],
+		xlabel = "sample size", 
+		ylabel ="p-value",
+		title= "mean p-values for combination of tests and distributions",
+		xrotation = 55,
+		# ribbon = [ std(pValsKSPhi) std(pValsKSEne) std(pValsChi2Phi) std(pValsChi2Ene)],
+		ylims = (1e-10,1),
+		yscale = :log10,
+		legend = :bottomleft,
+		widen = :true,
+		size = (800, 500)
+	)
+	savefig(p, "Figs/mean_pvals.pdf")
+	p
+end
 
 # ╔═╡ 852b33c3-99fb-4d3f-b22c-737a301a9cd8
 md"""
@@ -559,13 +607,16 @@ Above is a plot of mean p-values for each combination. We can see that the `ener
 """
 
 # ╔═╡ bb61aa57-0649-48fc-99e6-859c05f3e7a8
-begin
-	bxPhiKS = boxplot(pValsKSPhi, label = "", xticks=(1:length(sampleSizes), sampleSizes), xrotation = 45, c=1, fa = 0.5, xlabel = "sample size", ylabel ="p-value", title= "φ: KS test for various sample sizes", size =(1200,600), bottom_margin = 12Plots.mm, thickness_scaling = 1.5)
+let bxEneKS
+	bxEneKS = boxplot(Matrix(pValsKSEne), label = "", xticks=(1:length(sampleSizes), sampleSizes), xrotation = 45, c=1, fa = 0.5, xlabel = "sample size", ylabel ="p-value", title= "E: KS test for various sample sizes", size =(1200,600), bottom_margin = 12Plots.mm, thickness_scaling = 1.5, ylims = (0,1), outliers=:true, xshift = 0)
 
 	
-	lens!([length(sampleSizes)-12, length(sampleSizes)], [0.0, 0.05], inset = (1, bbox(0.57, 0.2, 0.4, 0.3)), lc=:black, lw =:3, xrotation=45, framestyle =:box)
+	lens!([length(sampleSizes)-18, length(sampleSizes)], [0.0, 0.11], inset = (1, bbox(0.47, 0.1, 0.5, 0.4)), lc=:black, lw =:3, xrotation=45, framestyle =:box)
 
-	xaxis!(xticks=(length(sampleSizes)-12:length(sampleSizes), sampleSizes[end-12:end]), subplot =2)
+	xaxis!(xticks=(length(sampleSizes)-18:length(sampleSizes), sampleSizes[end-18:end]), subplot =2)
+
+	savefig(bxEneKS, "Figs/KSEneBoxPlot.png")
+	bxEneKS
 end
 
 # ╔═╡ 51c2801e-7051-490a-bd68-1dceb9d7f7f9
@@ -586,9 +637,9 @@ Right away we can see that KS test is more strict when it comes to rejecting H0.
 """
 
 # ╔═╡ 5e04ec18-cbcd-4487-858a-7b9dfd942e51
-begin 
+let p 
 	bp1 = boxplot(
-		pValsKSPhi, 
+		Matrix(pValsKSPhi), 
 		label="", 
 		xticks=:none, 
 		xrotation=65, 
@@ -603,17 +654,18 @@ begin
 		
 	)
 	annotate!([(length(sampleSizes)-3,0.8,("φ: KS", 20))])
-
+	
 	bp2 = boxplot(
-		pValsKSEne, 
+		Matrix(pValsKSEne), 
 		label="", 
 		xticks=:none, #(1:length(sampleSizes), sampleSizes), 
 		xrotation=65, 
 		c=2, 
 		fa=0.5,  
-		yticks=:none,
+		# yticks=:none,
 		top_margin=0Plots.px,
 		bottom_margin=0Plots.px,
+		ylabel ="p-value", 
 		left_margin=0Plots.px,
 		right_margin=0Plots.px,
 		ylims=(0,1)
@@ -621,16 +673,18 @@ begin
 	annotate!([(length(sampleSizes)-3,0.8,("E: KS", 20))])
 
 	bp3 = boxplot(
-		filter!.(x -> x .>=0, pValsChi2Phi), 
+		Matrix(pValsChi2Phi), 
+		# filter!.(x -> x .>=0, pValsChi2Phi), 
 		label="", 
 		xticks=(1:length(sampleSizes), sampleSizes), 
 		xrotation=65, 
 		c=3, 
+		ylabel ="p-value", 
 		fa=0.5, 
 		xlabel="sample size", 
-		ylabel ="p-value", 
 		top_margin=0Plots.px,
 		left_margin=0Plots.px,
+		bottom_margin=0Plots.px,
 		right_margin=0Plots.px,
 		ylims=(0,1)
 	)
@@ -638,30 +692,38 @@ begin
 	
 
 	bp4 = boxplot(
-		filter!.(x -> x .>=0, pValsChi2Ene), 
+		Matrix(pValsChi2Ene), 
+		# filter!.(x -> x .>=0, pValsChi2Ene), 
 		label="", 
-		xticks=(1:length(sampleSizes), sampleSizes), 
+		# xticks=(1:length(sampleSizes), sampleSizes), 
 		xrotation=65, 
 		c=4, 
+		ylabel ="p-value", 
 		fa=0.5, 
-		xlabel="sample size", 
+		# xlabel="sample size", 
+		bottom_margin=0Plots.px,
 		top_margin=0Plots.px,
 		left_margin=0Plots.px,
 		right_margin=0Plots.px, 
-		yticks=:false,
+		xticks=:false,
 		ylims=(0,1)
 	)
 	annotate!([(length(sampleSizes)-3,0.8,(L"\mathrm{E:~ \chi^2}", 20))])
 	
 
-	bxpAll = plot(
-		bp1, bp2, bp3, bp4, 
+	p = plot(
+		 
+		bp2 ,bp1, bp4, bp3, 
 		size=(1200, 1100),
 		thickness_scaling=1.3, 
 		grid=:false, 
-		minorgrid=:false
+		minorgrid=:false,
+		layout = grid(4,1)
 	)
 
+	savefig(p, "Figs/BoxPlotAll.png")
+	p
+	
 end
 
 
@@ -672,60 +734,62 @@ However, since it can be seen that the p-values vary greatly, we can perform an 
 
 # ╔═╡ dc755feb-58eb-4be2-a6f8-5e2b51a06411
 begin
-	alpha = 1-0.95
+	effKSPhi = get_efficiency.(eachcol(pValsKSPhi), CL) .* 100
+	effKSEne = get_efficiency.(eachcol(pValsKSEne), CL) .* 100
 	
-	effKSPhi95 = 
-		count.(p -> p<=alpha, pValsKSPhi)./length.(pValsKSPhi).*100 .|> round .|>Int
-	effKSEne95 = 
-		count.(p -> p<=alpha, pValsKSEne)./length.(pValsKSEne).*100 .|> round .|>Int 
-	
-	effChiPhi95 = 
-		count.(p -> p<=alpha, pValsChi2Phi)./length.(pValsChi2Phi).*100 .|> round .|>Int
-	effChiEne95 = 
-		count.(p -> p<=alpha, pValsChi2Ene)./length.(pValsChi2Ene).*100 .|> round .|>Int
+	effChiPhi = get_efficiency.(eachcol(pValsChi2Phi), CL) .* 100
+	effChiEne = get_efficiency.(eachcol(pValsChi2Ene), CL) .* 100
 
 end
 
 # ╔═╡ cf835376-e192-4e90-9945-c072e44ae3bd
 begin
-	errKSPhi = AM.prop_error.(effKSPhi95, 100, true) 
-	errKSEne = AM.prop_error.(effKSEne95, 100, true)
-	errChiPhi = AM.prop_error.(effChiPhi95, 100, true)
-	errChiEne = AM.prop_error.(effChiEne95, 100, true)
+	errKSPhi = prop_error.(effKSPhi, 100, true) 
+	errKSEne = prop_error.(effKSEne, 100, true)
+	errChiPhi = prop_error.(effChiPhi, 100, true)
+	errChiEne = prop_error.(effChiEne, 100, true)
 end
 
 # ╔═╡ 3651c0a2-acd0-4193-9cc4-d3f7d1cd55b3
-begin
-	grpbKS = groupedbar(
+let p1, p2, p
+	p1 = groupedbar(
 		names = repeat(1:length(sampleSizes), outer = 2),
-		hcat(effKSPhi95, effKSEne95),
-		groups = repeat( ["KS: φ", "KS: E"], inner = length(sampleSizes) ),
+		hcat(effKSPhi, effKSEne),
+		groups = repeat( ["KS: angle", "KS: energy"], inner = length(sampleSizes) ),
 		c = [2 1],
 		yerr = vcat(errKSPhi, errKSEne),
-		ylabel = "efficiency", 
+		ylabel = "efficiency [%]", 
 	    xlabel = "sample size",
-		title  = L"\textrm{efficiency ~of ~passing ~KS}~\textrm{test ~for ~CL ~=} %$(CL)",
+		title  = string("efficiency of passing KS test for CL = $(CL*100)%"),
 		xticks = (1:length(sampleSizes), sampleSizes),
 		xrotation=45,
-		legend = :bottomright
+		legend = :bottomright,
+		size = (1100, 400),
+		bottom_margin = 14Plots.mm,
+		left_margin = 6Plots.mm
 	)
 	
-	grpbChi = groupedbar(
+	p2 = groupedbar(
 		names = repeat(1:length(sampleSizes), outer = 2),
-		hcat(effChiPhi95, effChiEne95),
-		groups = repeat( ["Chi: φ", "Chi: E"], inner = length(sampleSizes) ),
+		hcat(effChiPhi, effChiEne),
+		groups = repeat( ["Chi: angle", "Chi: energy"], inner = length(sampleSizes) ),
 		c = [4 3],
 		yerr = vcat(errChiPhi, errChiEne),
-		ylabel = "efficiency", 
+		ylabel = "efficiency [%]", 
 	    xlabel = "sample size",
-		title  = L"\textrm{efficiency ~of ~passing }~\mathrm{\chi^2} ~\textrm{test ~for ~CL ~=} %$(CL)",
+		title  = string("efficiency of passing ", L"\chi^2"," test for CL = $(CL*100)%"),
 		xticks = (1:length(sampleSizes), sampleSizes),
 		xrotation=45,
-		legend = :bottomright
-		
+		legend = :bottomright,
+		size = (1100, 400),
+		bottom_margin = 14Plots.mm,
+		left_margin = 6Plots.mm
 	)
 	
-	plot(grpbKS, grpbChi, layout = grid(2,1))
+	p = plot(p1, p2, layout = grid(2,1), size = (1100, 800))
+	savefig(p1, "Figs/efficiency_KS.pdf")
+	savefig(p2, "Figs/efficiency_chi.pdf")
+	p
 end
 
 # ╔═╡ 5163e320-0711-42e8-89c6-90994f612c56
@@ -733,127 +797,130 @@ md"""
 Finally we can create a table of *S* for the various defined methods and sample sizes.
 """
 
-# ╔═╡ 8a705628-67f8-45c1-be41-a0531e5378b5
-for (cl, nsig) in zip([0.68, 0.90, 0.95], [1, 1.645, 1.96])
-	minKSPhi = KSPhi.minEvents
-	minKSEne = KSEne.minEvents
-	minChi2Phi = Chi2Phi.minEvents
-	minChi2Ene = Chi2Ene.minEvents
-	minBBBPhi = AM.BBB(phi1, phi2, 0, 180, Δϕ, nsig).minEvents
-	minBBBEne = AM.BBB(singleElectronEnergies1, singleElectronEnergies2, 0, 3000, ΔE, nsig).minEvents
-end
-
-# ╔═╡ 15149b75-4ce7-472c-adfa-8d4ad153ba95
-md"""
-CL\method | KSphi |KSEne | Χ²Phi | Χ²Ene | BBBPhi | BBB Ene
-----------|-------|------|-------|-------|--------|--------
-68%       |70k    |450k  |60k    |350k   |11k     |60k
-90%       |150k   |750k  |60k    |350k   |30k     |160k
-95%       |200k   |750k  |200k   |500k   |45k     |230k
-
-"""
-
-# ╔═╡ 9a2dbe13-66c9-4fa5-8404-2872601bafef
-
-function get_delta_r_map(
-    vec1::Vector{<:Real},
-    vec2::Vector{<:Real},
-    xMin::Real,
-    xMax::Real,
-    stepSize::Real,
-)
-    h1 = Hist1D(vec1, xMin:stepSize:xMax)
-    h2 = Hist1D(vec2, xMin:stepSize:xMax)
-
-    matRatios = zeros(Int(xMax / stepSize), Int(xMax / stepSize))
-
-    for minROI = xMin:stepSize:xMax-stepSize        # iterating over the range xMin, xMax
-        for maxROI = minROI+stepSize:stepSize:xMax
-            rmin = AM.get_delta_r(h1, h2, minROI, maxROI, stepSize)
-
-            matRatios[Int(maxROI / stepSize), Int(minROI / stepSize)+1] = rmin
-        end
-    end
-
-    return matRatios
-end
-
-
-
-# ╔═╡ b675e1b6-320c-4db5-b527-068e6e571c84
-get_delta_r_map(bbb::AM.BBB) =
-    get_delta_r_map(bbb.vector1, bbb.vector2, bbb.xMin, bbb.xMax, bbb.stepSize)
-
-# ╔═╡ 45b56c40-2c2b-4725-9cf8-85958947f25b
-get_r_min_map(bbb::AM.BBB) =
-    AM.get_r_map(bbb.vector1, bbb.vector2, bbb.xMin, bbb.xMax, bbb.stepSize)
-
-# ╔═╡ 9ee70dbc-e29a-4bfc-a5f8-84afe88eb00b
-figDir = "/media/shoram/Extra SSD/CernBox/Work/Presentations/2023/2023_05_11_AnalysisMeeting/figs"
-
-# ╔═╡ 02e4fab7-c042-4f80-a616-2f318f177302
-begin
-    a = get_r_min_map(BBBPhi)
-    replace!(a, 0.0 => NaN)
-    title = "r_min"
-    afigtitle = "r_min_phi.png"
-
-    b = get_r_min_map(BBBEne)
-    replace!(b, 0.0 => NaN)
-    title = "r_min"
-    bfigtitle = "r_min_ene.png"
-
-
-    heatmap(
-        midpoints(0:Δϕ:180),
-        midpoints(0:Δϕ:180),
-        a,
-        c = :jet,
-        xlabel = "ϕmin",
-        ylabel = "ϕmax",
-        right_margin = 5Plots.mm,
-        left_margin = 5Plots.mm,
-        size = (800, 600),
-        title = title,
-        # colorbar_scale = :log10
+# ╔═╡ 7f4aac09-1411-41f7-9d49-c3048a9012b2
+let p, Δϕ = 15, ΔE = 150, sampleSize = 1_000_000
+	
+	
+		
+    shPhi = stephist(
+        [phi1[1:sampleSize], phi2[1:sampleSize]],
+        normed = :true,
+        nbins = 0:Δϕ:180,
+        label = ["standard" "refined"],
+        xlabel = "escape angle φ [°]",
+        ylabel = "normalized count rate",
+		ylims = (0, 0.011),
+        lw = 3,
     )
 
-    savefig(joinpath(figDir, afigtitle))
-
-
-
-    heatmap(
-        midpoints(0:ΔE:3000),
-        midpoints(0:ΔE:3000),
-        b,
-        c = :jet,
-        xlabel = "Emin",
-        ylabel = "Emax",
-        right_margin = 5Plots.mm,
-        left_margin = 5Plots.mm,
-        size = (800, 600),
-        title = title,
-        colorbar_scale = :log10,
+    resPhi = scatter(
+        midpoints(0:Δϕ:180),
+        get_residuals(phi1[1:sampleSize], phi2[1:sampleSize], 0:Δϕ:180, true),
+        yerr = get_residuals_errors(phi1[1:sampleSize], phi2[1:sampleSize], 0:Δϕ:180),
+        mc = :black,
+        label = "",
+        ylabel = "refined/standard",
+        xlabel = "escape angle φ [°]",
+        ms = 0.8,
+        ylims = (0.8, 1.2),
+		xlims = (0, 180)
     )
 
-    savefig(joinpath(figDir, bfigtitle))
+    shEne = stephist(
+        [singleElectronEnergies1[1:sampleSize], singleElectronEnergies2[1:sampleSize]],
+        normed = :true,
+        nbins = 0:ΔE:3000,
+        label = ["standard" "refined"],
+        xlabel = L"\textrm{single ~electron ~energy ~T_e ~[keV]}",
+        ylabel = "normalized count rate",
+        legend = :best,
+        lw = 3,
+		ylims = (0, 0.001),
+    )
+
+    resEne = scatter(
+        midpoints(0:ΔE:3000),
+        get_residuals(singleElectronEnergies1[1:sampleSize], singleElectronEnergies2[1:sampleSize], 0:ΔE:3000, true),
+        yerr = get_residuals_errors(
+            singleElectronEnergies1[1:sampleSize],
+            singleElectronEnergies2[1:sampleSize],
+            0:ΔE:3000,
+        ),
+        mc = :black,
+        label = "",
+        ylabel = "refined/standard",
+        xlabel = L"\textrm{single ~electron ~energy ~T_e ~[keV]}",
+        ylims = (0.8, 1.2),
+        ms = 0.8,
+		xlims = (0, 3000)
+    )
+
+	
+
+    p = plot(
+		
+        shPhi,
+        shEne,
+        resPhi,
+        resEne,
+        plot_title = "reconstructed distributions for a sample size of $sampleSize",
+        size = (1400, 1000),
+        thickness_scaling = 1.3,
+        layout = @layout [a b; c{0.3h} d]
+    )
+	savefig("Figs/Angular_and_Energy_dists_w_residuals_$(sampleSize).pdf")
+	p
 end
 
-# ╔═╡ 5b1dadf4-8030-42c4-8eaf-45b246a07f31
-violin(sampleSizes, pValsKSEne,side=:right, linewidth=0, label="")
+# ╔═╡ 945c7b08-b64e-4271-973d-64887af33ddc
+let p
+	p = plot(Kolmogorov(), label = "", xlabel = "D", title= "Example of Kolmogorov Distribution", ylims = (0, 1.8), lw = 3, ylabel = "f(D)", thickness_scaling = 1.7, size = (1200, 800))
+	savefig("Figs/KolmogorvPDF.pdf")
+	p
+end
 
-# ╔═╡ fb739410-42f1-4f0d-90d9-d222ae120315
-df1 = DataFrame(pValsKSEne, :auto)
+# ╔═╡ 2faab1ad-c41a-49d5-9c24-60ae7565e5f9
+aaaa =ApproximateTwoSampleKSTest(rand(100), rand(100))
 
-# ╔═╡ 354d0950-08e9-48b5-bf7d-6dd03049f0ae
-boxplot(collect(1:23)', pValsKSPhi[1:end], label = "", c = 2, xticks = (1:length(sampleSizes), sampleSizes), xrotation = 45, side = :right, yscale = :log10)
+# ╔═╡ 2e478442-9e10-4932-a67f-90edc411ce2e
+let
+	n = 20_000
+	s1 = get_samples(phi1, n, 500)
+	s2 = get_samples(phi2, n, 500)
 
-# ╔═╡ fff6b96d-90c8-43f1-8260-a3068109dcbe
-[1 2]
+	chis = ChisqTest.(s1, s2, 0, 180, 15 ) 
+
+	stats= [x.stat for x in chis]
+	
+	p = stephist(stats, nbins = 100, normed = :true, xlabel = L"\chi^2"*" statistic", ylabel = "counts", title = "distribution of 500 calculated "*L"\chi^2 "*"statistic for \nsample size of 20,000 events", label = "", lw = 2, thickness_scaling = 1.4 )
+
+	savefig("Figs/ChiStatistics$n.pdf")
+	p
+end
+
+# ╔═╡ 37759810-cb12-4c70-8c17-9475bd58ad27
+let
+	n = 20_000
+	s1 = get_samples(phi1, n, 500)
+	s2 = get_samples(phi2, n, 500)
+
+	ks = ApproximateTwoSampleKSTest.(s1, s2) 
+
+	stats= [x.:δ for x in ks]
+	
+	p = stephist(stats, nbins = 100, normed = :true, xlabel = "KS statistic", ylabel = "counts", title = "distribution of 500 calculated KS statistic for \nsample size of 20,000 events", label = "", lw = 2, thickness_scaling = 1.4 )
+
+	savefig("Figs/KSStatistics$n.pdf")
+	p
+end
+
+# ╔═╡ 6bd4c00b-f0ca-4338-ad66-7f17979084b6
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataFramesMeta = "1313f7d8-7da2-5740-9ea0-a2ca25f37964"
@@ -863,6 +930,7 @@ HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
+PrettyTables = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
@@ -871,6 +939,7 @@ Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
 UnROOT = "3cd96dde-e98d-4713-81e9-a4a1b0235ce9"
 
 [compat]
+CSV = "~0.10.11"
 ColorSchemes = "~3.22.0"
 DataFrames = "~1.6.1"
 DataFramesMeta = "~0.14.0"
@@ -880,6 +949,7 @@ HypothesisTests = "~0.10.11"
 LaTeXStrings = "~1.3.0"
 PlutoUI = "~0.7.50"
 Polynomials = "~3.2.1"
+PrettyTables = "~2.2.7"
 RecipesBase = "~1.3.3"
 Revise = "~3.5.0"
 StatsBase = "~0.33.21"
@@ -892,9 +962,9 @@ UnROOT = "~0.8.21"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.2"
+julia_version = "1.9.3"
 manifest_format = "2.0"
-project_hash = "95e39e5dabd7d09fb869e4e9db4fe1e06eade57c"
+project_hash = "39a06130a6948589521925828fc98f2a0b750cc1"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -988,6 +1058,12 @@ version = "1.0.8+0"
 git-tree-sha1 = "eb4cb44a499229b3b8426dcfb5dd85333951ff90"
 uuid = "fa961155-64e5-5f13-b03f-caf6b980ea82"
 version = "0.4.2"
+
+[[deps.CSV]]
+deps = ["CodecZlib", "Dates", "FilePathsBase", "InlineStrings", "Mmap", "Parsers", "PooledArrays", "PrecompileTools", "SentinelArrays", "Tables", "Unicode", "WeakRefStrings", "WorkerUtilities"]
+git-tree-sha1 = "44dbf560808d49041989b8a96cae4cffbeb7966a"
+uuid = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+version = "0.10.11"
 
 [[deps.Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "CompilerSupportLibraries_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
@@ -1256,6 +1332,12 @@ git-tree-sha1 = "445c9b5da795962ccfa7747daae5b05a4902ff28"
 uuid = "68837c9b-b678-4cd5-9925-8a54edc8f695"
 version = "0.9.3"
 
+[[deps.FilePathsBase]]
+deps = ["Compat", "Dates", "Mmap", "Printf", "Test", "UUIDs"]
+git-tree-sha1 = "e27c4ebe80e8699540f2d6c805cc12203b614f12"
+uuid = "48062228-2e41-5def-b9a4-89aafe57970f"
+version = "0.9.20"
+
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
@@ -1318,7 +1400,7 @@ uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
 version = "0.72.9"
 
 [[deps.GR_jll]]
-deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Qt6Base_jll", "Zlib_jll", "libpng_jll"]
+deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "FreeType2_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Qt6Base_jll", "Zlib_jll", "libpng_jll"]
 git-tree-sha1 = "f61f768bf090d97c532d24b64e07b237e9bb7b6b"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
 version = "0.72.9+0"
@@ -2290,6 +2372,12 @@ git-tree-sha1 = "4528479aa01ee1b3b4cd0e6faef0e04cf16466da"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.25.0+0"
 
+[[deps.WeakRefStrings]]
+deps = ["DataAPI", "InlineStrings", "Parsers"]
+git-tree-sha1 = "b1be2855ed9ed8eac54e5caff2afcdb442d52c23"
+uuid = "ea10d353-3f73-51f8-a26c-33c1cb351aa5"
+version = "1.4.2"
+
 [[deps.Widgets]]
 deps = ["Colors", "Dates", "Observables", "OrderedCollections"]
 git-tree-sha1 = "fcdae142c1cfc7d89de2d11e08721d0f2f86c98a"
@@ -2301,6 +2389,11 @@ deps = ["LinearAlgebra", "SparseArrays"]
 git-tree-sha1 = "de67fa59e33ad156a590055375a30b23c40299d3"
 uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
 version = "0.5.5"
+
+[[deps.WorkerUtilities]]
+git-tree-sha1 = "cd1659ba0d57b71a464a29e64dbc67cfe83d54e7"
+uuid = "76eceee3-57b5-4d4a-8e66-0e911cebbf60"
+version = "1.6.1"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
@@ -2566,7 +2659,7 @@ version = "0.31.1+0"
 # ╟─e80946c3-21bb-4e6b-91c3-5e7c4d69b1b0
 # ╟─ed4d68ee-131a-4a44-99a3-eac9ece030c8
 # ╟─ac6ee28c-72a2-4e79-8cb1-2f5a60eea8c2
-# ╟─53484f4e-129e-4aa1-8e24-959eaa9cdb3d
+# ╠═53484f4e-129e-4aa1-8e24-959eaa9cdb3d
 # ╠═3d268ae3-f1db-489d-887d-de555417c467
 # ╠═a593dd52-19e8-4502-9ff5-2211c6a4565a
 # ╠═576f03a1-1d95-4a0a-a8df-d368af5d6d37
@@ -2590,15 +2683,11 @@ version = "0.31.1+0"
 # ╠═3651c0a2-acd0-4193-9cc4-d3f7d1cd55b3
 # ╟─5163e320-0711-42e8-89c6-90994f612c56
 # ╠═8a705628-67f8-45c1-be41-a0531e5378b5
-# ╠═15149b75-4ce7-472c-adfa-8d4ad153ba95
-# ╠═9a2dbe13-66c9-4fa5-8404-2872601bafef
-# ╠═b675e1b6-320c-4db5-b527-068e6e571c84
-# ╠═45b56c40-2c2b-4725-9cf8-85958947f25b
-# ╠═02e4fab7-c042-4f80-a616-2f318f177302
-# ╠═9ee70dbc-e29a-4bfc-a5f8-84afe88eb00b
-# ╠═5b1dadf4-8030-42c4-8eaf-45b246a07f31
-# ╠═fb739410-42f1-4f0d-90d9-d222ae120315
-# ╠═354d0950-08e9-48b5-bf7d-6dd03049f0ae
-# ╠═fff6b96d-90c8-43f1-8260-a3068109dcbe
+# ╠═7f4aac09-1411-41f7-9d49-c3048a9012b2
+# ╠═945c7b08-b64e-4271-973d-64887af33ddc
+# ╠═2faab1ad-c41a-49d5-9c24-60ae7565e5f9
+# ╠═2e478442-9e10-4932-a67f-90edc411ce2e
+# ╠═37759810-cb12-4c70-8c17-9475bd58ad27
+# ╠═6bd4c00b-f0ca-4338-ad66-7f17979084b6
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
