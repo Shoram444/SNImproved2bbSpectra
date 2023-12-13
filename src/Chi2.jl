@@ -177,7 +177,7 @@ function MPChisqTest(
     bincounts2 = bincounts(Hist1D(vector2, (binRange)))
 
     (minimum(bincounts1) < 5 || minimum(bincounts1) < 5) && error(
-        "ERROR: method only works for bins with >5 counts, please edit histogram range.",
+        "ERROR: method only works for bins with >5 counts, please edit histogram range. Problematic bins occur at subset size: $(length(vector1))])",
     )
 
     dof = length(bincounts1) - 1  # degrees of freedom
@@ -213,12 +213,19 @@ function HypothesisTests.ChisqTest(
 
     binRange = xMin:xStep:xMax
 
-    bincounts1 = bincounts(Hist1D(vector1, (binRange)))
-    bincounts2 = bincounts(Hist1D(vector2, (binRange)))
+    h1 = Hist1D(vector1, (binRange))
+    h2 = Hist1D(vector2, (binRange))
 
-    (minimum(bincounts1) < 5 || minimum(bincounts1) < 5) && error(
-        "ERROR: method only works for bins with >5 counts, please edit histogram range.",
-    )
+    bincounts1 = bincounts(h1)
+    bincounts2 = bincounts(h2)
+
+    if(minimum(bincounts1) < 5 || minimum(bincounts2) < 5)
+        problematicBin = minimum(bincounts1) < minimum(bincounts2) ? bincenters(h1)[argmin(bincounts1)] : bincenters(h2)[argmin(bincounts2)]
+        error(
+        "ERROR: method only works for bins with >5 counts, please edit histogram range. 
+         Problematic bins occur at subset size: $(length(vector1))]), at bin: $(problematicBin - xStep/2) - $(problematicBin + xStep/2)!" 
+        )
+    end
 
     return ChisqTest(bincounts1, bincounts2)
 end
